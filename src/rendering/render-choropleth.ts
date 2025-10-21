@@ -214,9 +214,9 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
 
         // Force quantize scale to always use exactly 5 values with rounded thresholds
         // For quantize scales, we need to set the range explicitly to control the number of bins
-        if (plotOptions.type === 'quantize' && range === undefined) {
-          // If a scheme is specified, sample 5 colors from it
-          if (plotOptions.scheme) {
+        if (plotOptions.type === 'quantize') {
+          // If a scheme is specified and no custom range, sample 5 colors from it
+          if (plotOptions.scheme && range === undefined) {
             const scheme = plotOptions.scheme
             // Get the interpolator function for the scheme
             const interpolator = (d3 as any)[`interpolate${scheme.charAt(0).toUpperCase()}${scheme.slice(1)}`]
@@ -226,6 +226,11 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
               delete finalConfig.scheme
             }
           }
+          else if (range !== undefined) {
+            // Custom color range provided
+            finalConfig.range = range
+            delete finalConfig.scheme
+          }
 
           // Use threshold scale with nice rounded values instead for better readability
           if (domainToUse) {
@@ -233,21 +238,38 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
             // Generate nice rounded thresholds (5 bins = 4 thresholds)
             // For percentages (0-1 range), use more precision; for larger numbers, round more aggressively
             const isSmallRange = max - min <= 1
-            const tickCount = 4
 
             let thresholds: number[]
             if (isSmallRange) {
               // For percentage data (0-1), generate nice decimal thresholds
-              thresholds = d3.ticks(min, max, tickCount + 1).slice(1, -1)
+              // Request 6 ticks to get 4 internal values after slicing
+              const allTicks = d3.ticks(min, max, 6)
+              thresholds = allTicks.slice(1, -1)
+              // Ensure we have exactly 4 thresholds
+              if (thresholds.length !== 4) {
+                // Fallback to evenly spaced values
+                thresholds = [0.2, 0.4, 0.6, 0.8]
+              }
             }
             else {
               // For larger ranges, round to integers or nice values
-              const rawTicks = d3.ticks(min, max, tickCount + 1)
-              thresholds = rawTicks.slice(1, -1).map(t => Math.round(t))
+              // Request 6 ticks to get 4 internal values after slicing
+              const allTicks = d3.ticks(min, max, 6)
+              const candidateThresholds = allTicks.slice(1, -1).map(t => Math.round(t))
+              
+              // Ensure we have exactly 4 unique thresholds
+              if (candidateThresholds.length === 4) {
+                thresholds = candidateThresholds
+              }
+              else {
+                // Fallback: manually calculate 4 evenly spaced thresholds
+                const step = (max - min) / 5
+                thresholds = [1, 2, 3, 4].map(i => Math.round(min + step * i))
+              }
             }
 
-            if (thresholds.length >= 3) {
-              // Only use threshold scale if we got enough nice values
+            // Always use threshold scale with exactly 4 thresholds for 5 bins
+            if (thresholds.length === 4) {
               finalConfig.type = 'threshold'
               finalConfig.domain = thresholds
             }
@@ -256,10 +278,6 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
             // Domain will be inferred from data, calculate thresholds after data processing
             finalConfig._needsRoundedThresholds = true
           }
-        }
-        else if (range !== undefined) {
-          finalConfig.range = range
-          delete finalConfig.scheme
         }
 
         // Add formatting based on data type
