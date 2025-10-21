@@ -1,0 +1,61 @@
+{
+  "name": "resp-2025-cartos",
+  "type": "module",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Cartographies sur l'état des services publics en France - Données BPE 2023 (INSEE)",
+  "author": "Collectif Nos Services Publics",
+  "license": "MIT",
+  "imports": {
+    "#types": "./types/index.ts",
+    "#types/*": "./types/*.ts",
+    "#scripts/*": "./scripts/*.ts"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "pnpm typecheck:frontend && pnpm typecheck:scripts",
+    "typecheck:frontend": "vue-tsc --noEmit -p src/tsconfig.json",
+    "typecheck:scripts": "tsc --noEmit -p scripts/tsconfig.json",
+    "lint": "eslint --ext .ts,.tsx,.vue src",
+    "lint:fix": "eslint --fix --ext .ts,.tsx,.vue src"
+  },
+  "dependencies": {
+    "@atlas-composer/projection-loader": "1.1.0-rc.12",
+    "@observablehq/plot": "^0.6.17",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "d3": "^7.9.0",
+    "d3-composite-projections": "^2.0.0",
+    "d3-geo": "^3.1.1",
+    "d3-geo-projection": "^4.0.0",
+    "d3-path": "^3.1.0",
+    "daisyui": "^5.3.7",
+    "pinia": "^3.0.3",
+    "remixicon": "^4.7.0",
+    "tailwindcss": "^4.1.14",
+    "topojson-client": "^3.1.0",
+    "topojson-simplify": "^3.0.3",
+    "vue": "^3.5.22",
+    "vue-router": "^4.6.3"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^5.4.1",
+    "@tailwindcss/postcss": "^4.1.14",
+    "@tailwindcss/vite": "^4.1.14",
+    "@types/d3": "^7.4.3",
+    "@types/d3-geo": "^3.1.0",
+    "@types/geojson": "^7946.0.16",
+    "@types/node": "^24.8.0",
+    "@types/topojson-client": "^3.1.5",
+    "@types/topojson-specification": "^1.0.5",
+    "@vue/tsconfig": "^0.8.1",
+    "@vueuse/core": "^13.9.0",
+    "eslint": "^9.37.0",
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.10",
+    "vite-plugin-eslint": "^1.8.1",
+    "vue-tsc": "^3.1.1"
+  }
+}
