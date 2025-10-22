@@ -42,6 +42,9 @@ export default class MapService {
   }
 
   getSelectedEntry(entryKey: string): string | undefined {
+    // Access version to trigger reactivity when selections change
+    const _triggerReactivity = this.version.value
+    void _triggerReactivity
     return this.selectedFormControls.get(entryKey)
   }
 
