@@ -15,6 +15,7 @@ export const inegalitesConfig: ServiceConfig = {
         { label: 'Décile 9 (D9)', key: 'd9' },
         { label: 'Minimum', key: 'min' },
         { label: 'Maximum', key: 'max' },
+        { label: 'amplitude (D9-D1)', key: 'amplitude' },
         { label: 'Coefficient de Gini', key: 'gini' },
       ],
     },
@@ -85,6 +86,14 @@ export const inegalitesConfig: ServiceConfig = {
         'ecole': 'Coefficient de Gini pour l\'accès à une école',
         'inegalites-france-services': 'Coefficient de Gini pour l\'accès à une maison France Services',
       },
+      amplitude: {
+        'default': 'Amplitude des durées d\'accès (D9-D1) à {facility}',
+        'urgences': 'Amplitude des durées d\'accès (D9-D1) aux urgences',
+        'maternite': 'Amplitude des durées d\'accès (D9-D1) à une maternité',
+        'centre_sante': 'Amplitude des durées d\'accès (D9-D1) à un centre de santé',
+        'ecole': 'Amplitude des durées d\'accès (D9-D1) à une école',
+        'inegalites-france-services': 'Amplitude des durées d\'accès (D9-D1) à une maison France Services',
+      },
     },
     colorSchemes: {
       moyenne: {
@@ -112,6 +121,10 @@ export const inegalitesConfig: ServiceConfig = {
         scheme: 'OrRd',
         label: 'Maximum (min)',
       },
+      amplitude: {
+        scheme: 'OrRd',
+        label: 'Amplitude D9-D1 (min)',
+      },
       gini: {
         type: 'quantize',
         scheme: 'OrRd',
@@ -121,6 +134,22 @@ export const inegalitesConfig: ServiceConfig = {
     dataKeys: {
       rowKey: 'dep',
       featureKey: 'INSEE_DEP',
+    },
+    valueProcessor: (row, metric) => {
+      // Calculate amplitude as decile9 - decile1
+      if (metric === 'amplitude') {
+        const d9 = row.d9
+        const d1 = row.d1
+        if (d9 != null && d1 != null) {
+          // Convert to numbers if they're strings
+          const d9Num = typeof d9 === 'number' ? d9 : +String(d9).replace(',', '.')
+          const d1Num = typeof d1 === 'number' ? d1 : +String(d1).replace(',', '.')
+          return d9Num - d1Num
+        }
+        return null
+      }
+      // For other metrics, return the value directly
+      return row[metric]
     },
     tooltip: {
       template: 'single-metric',
