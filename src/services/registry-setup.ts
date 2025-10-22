@@ -2,6 +2,7 @@ import { couvertureConfig } from '@/config/couvertures'
 import { dureeConfig } from '@/config/duree'
 import { eloignementConfig } from '@/config/eloignement'
 import { evolutionConfig } from '@/config/evolution'
+import { inegalitesConfig } from '@/config/inegalites'
 import { MapRegistry } from '@/services/map-registry'
 import { ServiceFactory } from '@/services/service-factory'
 
@@ -17,6 +18,7 @@ function createMapRegistry(): MapRegistry {
     dureeConfig,
     eloignementConfig,
     evolutionConfig,
+    inegalitesConfig,
   ]
 
   for (const config of configs) {

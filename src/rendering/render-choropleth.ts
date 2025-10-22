@@ -101,18 +101,27 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
     if (values.length > 0) {
       const min = Math.min(...values)
       const max = Math.max(...values)
+      const range = max - min
 
       // Generate nice rounded thresholds (5 bins = 4 thresholds)
-      const isSmallRange = max - min <= 1
+      // Use floats for small ranges (< 10), integers for larger ranges
+      const useFloats = range < 10
 
       let thresholds: number[]
-      if (isSmallRange) {
-        // For small ranges (percentages 0-1), use 0.2 increments: [0.2, 0.4, 0.6, 0.8]
+      if (range <= 1) {
+        // For very small ranges (0-1), use 0.2 increments: [0.2, 0.4, 0.6, 0.8]
         thresholds = [0.2, 0.4, 0.6, 0.8]
       }
+      else if (useFloats) {
+        // For small ranges (1-10), use d3.ticks with 1 decimal precision
+        const allTicks = d3.ticks(min, max, 5)
+        thresholds = allTicks.slice(1, -1).map((t) => {
+          // Round to 1 decimal place for readability
+          return Number(t.toFixed(1))
+        })
+      }
       else {
-        // For larger ranges, generate nice round numbers
-        // Use d3.ticks to get 6 nice values (boundaries + 4 internal)
+        // For larger ranges, generate nice round integers
         const allTicks = d3.ticks(min, max, 5)
         // Take only the 4 internal thresholds, ensuring they're clean integers
         thresholds = allTicks.slice(1, -1).map((t) => {
@@ -235,35 +244,39 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
           // Use threshold scale with nice rounded values instead for better readability
           if (domainToUse) {
             const [min, max] = domainToUse
+            const range = max - min
             // Generate nice rounded thresholds (5 bins = 4 thresholds)
-            // For percentages (0-1 range), use more precision; for larger numbers, round more aggressively
-            const isSmallRange = max - min <= 1
+            // For small ranges (< 10), use floats; for larger numbers, use integers
+            const useFloats = range < 10
 
             let thresholds: number[]
-            if (isSmallRange) {
-              // For percentage data (0-1), generate nice decimal thresholds
-              // Request 6 ticks to get 4 internal values after slicing
+            if (range <= 1) {
+              // For very small ranges (0-1), use 0.2 increments
+              thresholds = [0.2, 0.4, 0.6, 0.8]
+            }
+            else if (useFloats) {
+              // For small ranges (1-10), generate nice decimal thresholds with 1 decimal
               const allTicks = d3.ticks(min, max, 6)
-              thresholds = allTicks.slice(1, -1)
+              thresholds = allTicks.slice(1, -1).map(t => Number(t.toFixed(1)))
               // Ensure we have exactly 4 thresholds
               if (thresholds.length !== 4) {
-                // Fallback to evenly spaced values
-                thresholds = [0.2, 0.4, 0.6, 0.8]
+                // Fallback to evenly spaced values with 1 decimal
+                const step = range / 5
+                thresholds = [1, 2, 3, 4].map(i => Number((min + step * i).toFixed(1)))
               }
             }
             else {
-              // For larger ranges, round to integers or nice values
-              // Request 6 ticks to get 4 internal values after slicing
+              // For larger ranges, round to integers
               const allTicks = d3.ticks(min, max, 6)
               const candidateThresholds = allTicks.slice(1, -1).map(t => Math.round(t))
-              
+
               // Ensure we have exactly 4 unique thresholds
               if (candidateThresholds.length === 4) {
                 thresholds = candidateThresholds
               }
               else {
                 // Fallback: manually calculate 4 evenly spaced thresholds
-                const step = (max - min) / 5
+                const step = range / 5
                 thresholds = [1, 2, 3, 4].map(i => Math.round(min + step * i))
               }
             }
@@ -286,11 +299,18 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
           finalConfig.tickFormat = (d: number) => `${(d * 100).toFixed(0)}%`
         }
         else if (plotOptions.type === 'threshold' || finalConfig._needsRoundedThresholds) {
-          // For threshold scales with potentially large numbers, format as clean integers
+          // For threshold scales, determine decimal places based on the value's magnitude
+          // This is evaluated at render time, so it works even when domain is calculated later
           finalConfig.tickFormat = (d: number) => {
-            // Round to integer and format without decimals
-            const rounded = Math.round(d)
-            return rounded.toString()
+            // Check if this is a small value (0-10 range)
+            if (d < 10) {
+              // For small values, use 1 decimal place
+              return d.toFixed(1)
+            }
+            else {
+              // For large values, use integers
+              return Math.round(d).toString()
+            }
           }
         }
 

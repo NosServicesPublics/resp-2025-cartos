@@ -86,6 +86,10 @@ export default class MapService {
       if (d.Source !== undefined) {
         return d.Source === selectedFacility
       }
+      // For inegalites data: filter by "facility" column
+      if (d.facility !== undefined) {
+        return d.facility === selectedFacility
+      }
       return true
     })
   }

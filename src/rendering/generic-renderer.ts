@@ -7,12 +7,31 @@ import {
   interpolatePlasma,
   interpolateViridis,
   schemeBlues,
+  schemeBrBG,
+  schemeBuGn,
+  schemeBuPu,
+  schemeGnBu,
   schemeGreens,
   schemeGreys,
   schemeOranges,
+  schemeOrRd,
+  schemePiYG,
+  schemePRGn,
+  schemePuBu,
+  schemePuBuGn,
+  schemePuRd,
   schemePurples,
   schemeRdBu,
+  schemeRdGy,
+  schemeRdPu,
+  schemeRdYlBu,
+  schemeRdYlGn,
   schemeReds,
+  schemeSpectral,
+  schemeYlGn,
+  schemeYlGnBu,
+  schemeYlOrBr,
+  schemeYlOrRd,
 } from 'd3'
 import { CUSTOM_COLOR_SCHEMES } from '@/config/color-schemes'
 import { renderChoropleth } from '@/rendering/render-choropleth'
@@ -179,24 +198,53 @@ function formatValue(value: number, metricConfig: any): string {
 }
 
 function getPaletteForScheme(scheme?: string): string[] | undefined {
+  console.log('scheme :', scheme)
   if (!scheme) {
     return undefined
   }
 
   const normalized = scheme.toLowerCase()
 
-  const discreteLookup: Record<string, readonly string[]> = {
+  // Single-hue schemes (9 colors)
+  const singleHueLookup: Record<string, readonly string[]> = {
     blues: schemeBlues[9]!,
     greens: schemeGreens[9]!,
     reds: schemeReds[9]!,
     oranges: schemeOranges[9]!,
     purples: schemePurples[9]!,
     greys: schemeGreys[9]!,
-    rdbu: schemeRdBu[11]!,
+    buGn: schemeBuGn[9]!,
+    bupu: schemeBuPu[9]!,
+    gnbu: schemeGnBu[9]!,
+    orrd: schemeOrRd[9]!,
+    pubu: schemePuBu[9]!,
+    pubugn: schemePuBuGn[9]!,
+    purd: schemePuRd[9]!,
+    rdpu: schemeRdPu[9]!,
+    ylgn: schemeYlGn[9]!,
+    ylgnbu: schemeYlGnBu[9]!,
+    ylorbr: schemeYlOrBr[9]!,
+    ylorrd: schemeYlOrRd[9]!,
   }
 
-  if (discreteLookup[normalized]) {
-    return [...discreteLookup[normalized]]
+  // Diverging schemes (11 colors)
+  const divergingLookup: Record<string, readonly string[]> = {
+    brbg: schemeBrBG[11]!,
+    piyg: schemePiYG[11]!,
+    prgn: schemePRGn[11]!,
+    rdbu: schemeRdBu[11]!,
+    rdgy: schemeRdGy[11]!,
+    rdylbu: schemeRdYlBu[11]!,
+    rdylgn: schemeRdYlGn[11]!,
+    spectral: schemeSpectral[11]!,
+  }
+
+  if (singleHueLookup[normalized]) {
+    return [...singleHueLookup[normalized]]
+  }
+
+  if (divergingLookup[normalized]) {
+    return [...divergingLookup[normalized]]
   }
 
   const interpolatorLookup: Record<string, (t: number) => string> = {

@@ -43,7 +43,7 @@ const { isMobile } = useBreakpoints()
       Choix du jeu de données
     </h2>
     <div :class="{ 'collapse-content': isMobile }">
-      <div class="tabs tabs-box grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
+      <div class="tabs tabs-box grid gap-2 grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
         <label
           v-for="entry in mapStore.availableMaps"
           :key="entry.id"
