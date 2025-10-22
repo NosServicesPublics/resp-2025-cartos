@@ -6,6 +6,59 @@ const mapStore = useMapStore()
 const showFeedback = ref(false)
 const feedbackMessage = ref('')
 
+/**
+ * Sanitize a string for use in filename by normalizing accents and removing special characters
+ */
+function sanitizeForFilename(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize('NFD') // Decompose accented characters
+    .replace(/[\u0300-\u036F]/g, '') // Remove diacritics
+    .replace(/[^a-z0-9]+/g, '-') // Replace non-alphanumeric with dashes
+    .replace(/^-+|-+$/g, '') // Remove leading/trailing dashes
+}
+
+/**
+ * Generate a descriptive filename based on current selections
+ */
+function generateFilename(extension: 'svg' | 'png'): string {
+  const currentService = mapStore.currentService
+  if (!currentService) {
+    return `carte.${extension}`
+  }
+
+  const parts: string[] = []
+
+  // Add service title
+  const serviceTitle = sanitizeForFilename(currentService.title)
+  parts.push(serviceTitle)
+
+  // Add facility/service selection if available
+  const facilityKey = mapStore.getSelectedEntry('facility')
+  if (facilityKey) {
+    const facilityLabel = currentService.getSelectedEntryLabel('facility')
+    if (facilityLabel) {
+      // Truncate and sanitize facility name (max 20 chars)
+      const facility = sanitizeForFilename(facilityLabel).substring(0, 20).replace(/-+$/, '')
+      parts.push(facility)
+    }
+  }
+
+  // Add metric selection if available
+  const metricKey = mapStore.getSelectedEntry('metric')
+  if (metricKey) {
+    const metricLabel = currentService.getSelectedEntryLabel('metric')
+    if (metricLabel) {
+      // Truncate and sanitize metric name (max 15 chars)
+      const metric = sanitizeForFilename(metricLabel).substring(0, 15).replace(/-+$/, '')
+      parts.push(metric)
+    }
+  }
+
+  // Join parts and add extension
+  return `${parts.join('_')}.${extension}`
+}
+
 async function shareMap() {
   try {
     const shareableUrl = mapStore.getShareableUrl()
@@ -65,12 +118,8 @@ async function downloadSvg() {
       return
     }
 
-    // Get the current service for filename generation
-    const currentService = mapStore.currentService
-    const serviceTitle = currentService?.title || 'carte'
-
-    // Create a safe filename
-    const filename = `${serviceTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.svg`
+    // Generate filename based on current selections
+    const filename = generateFilename('svg')
 
     // Create a combined SVG that includes title and both legend and map
     const combinedSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
@@ -262,12 +311,8 @@ async function downloadPng() {
       return
     }
 
-    // Get the current service for filename generation
-    const currentService = mapStore.currentService
-    const serviceTitle = currentService?.title || 'carte'
-
-    // Create a safe filename
-    const filename = `${serviceTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`
+    // Generate filename based on current selections
+    const filename = generateFilename('png')
 
     // Create a combined SVG (same logic as downloadSvg)
     const combinedSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
