@@ -9,10 +9,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const srcDir = path.resolve(__dirname, 'src')
 const outDir = path.resolve(__dirname, 'dist')
 
-export default defineConfig(env => ({
+export default defineConfig(() => ({
   root: srcDir,
   publicDir: path.resolve(srcDir, 'public'),
-  base: env.mode === 'production' ? '/resp-2025-cartos/' : '/',
+  base: '/',
   build: {
     outDir,
     emptyOutDir: true,
