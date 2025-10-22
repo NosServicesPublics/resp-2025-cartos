@@ -36,7 +36,7 @@ watch([mapPlot, mapContainer], ([plot, container]) => {
 } */
 
 .map-container:deep(figure h2) {
-  @apply text-lg font-semibold mb-4;
+  @apply font-semibold;
 }
 
 .map-container:deep(h2+svg) {
