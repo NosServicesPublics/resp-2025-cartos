@@ -1,5 +1,5 @@
 import type { ServiceConfig } from '@/services/service-config'
-import { COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
+import { DIVERGING_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 
 export const evolutionConfig: ServiceConfig = {
   id: 'evolution',
@@ -33,7 +33,7 @@ export const evolutionConfig: ServiceConfig = {
     {
       key: 'colorScheme',
       label: 'Palette de couleurs',
-      entries: COLOR_SCHEME_OPTIONS,
+      entries: DIVERGING_COLOR_SCHEME_OPTIONS,
     },
   ],
   rendering: {

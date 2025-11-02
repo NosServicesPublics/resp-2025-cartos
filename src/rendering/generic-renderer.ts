@@ -33,7 +33,7 @@ import {
   schemeYlOrBr,
   schemeYlOrRd,
 } from 'd3'
-import { CUSTOM_COLOR_SCHEMES } from '@/config/color-schemes'
+import { CUSTOM_COLOR_SCHEMES, DIVERGING_COLOR_SCHEMES, FULL_COLOR_SCALES } from '@/config/color-schemes'
 import { renderChoropleth } from '@/rendering/render-choropleth'
 import { defaultFeatureKey, defaultNumberNormalizer, getTitleTemplate, interpolateTitle } from '@/services/service-config'
 
@@ -54,8 +54,11 @@ export function createServiceRenderer(config: ServiceConfig): MapRenderer {
     }
 
     const selectedSchemeKey = service.getSelectedEntry('colorScheme')
+
+    // Check if diverging scheme is selected
+    const isDivergingScheme = selectedSchemeKey && DIVERGING_COLOR_SCHEMES[selectedSchemeKey]
     const customRange = selectedSchemeKey && selectedSchemeKey !== 'auto'
-      ? CUSTOM_COLOR_SCHEMES[selectedSchemeKey] ?? undefined
+      ? (DIVERGING_COLOR_SCHEMES[selectedSchemeKey] ?? CUSTOM_COLOR_SCHEMES[selectedSchemeKey] ?? undefined)
       : undefined
 
     const resolvedScheme = !selectedSchemeKey || selectedSchemeKey === 'auto' || customRange
@@ -63,9 +66,23 @@ export function createServiceRenderer(config: ServiceConfig): MapRenderer {
       : selectedSchemeKey
 
     const palette = customRange ?? getPaletteForScheme(resolvedScheme)
-    const outlineStrokeValue = palette?.[palette.length - 1] ?? '#222'
 
-    // Generate title
+    // Determine outline/text color:
+    // - For diverging scales: use neutral dark gray
+    // - For sequential custom scales: use darker color from full scale (index 16)
+    // - For sequential D3 schemes: use darkest from palette
+    let outlineStrokeValue = '#222'
+    if (isDivergingScheme || metricConfig.type === 'diverging') {
+      outlineStrokeValue = '#333333' // neutral dark gray for diverging
+    }
+    else if (selectedSchemeKey && selectedSchemeKey !== 'auto' && CUSTOM_COLOR_SCHEMES[selectedSchemeKey]) {
+      // For custom sequential schemes, use index 16 from the full scale
+      const fullScale = (FULL_COLOR_SCALES as any)[selectedSchemeKey]
+      outlineStrokeValue = fullScale?.[18] ?? palette?.[palette.length - 1] ?? '#222'
+    }
+    else {
+      outlineStrokeValue = palette?.[palette.length - 1] ?? '#222'
+    } // Generate title
     const facilityKey = service.getSelectedEntry('facility') || ''
     const titleTemplate = getTitleTemplate(renderConfig.titleTemplates, metricKey, facilityKey)
     if (!titleTemplate) {
@@ -102,13 +119,16 @@ export function createServiceRenderer(config: ServiceConfig): MapRenderer {
     // Create color scale config
     const colorScale = {
       legend: metricConfig.legend ?? true,
-      type: metricConfig.type || 'quantize',
+      // Map metric type to Plot scale type: 'diverging' → 'threshold' for custom schemes or quantized diverging
+      type: isDivergingScheme ? 'threshold' : (metricConfig.type === 'diverging' ? 'threshold' : (metricConfig.type || 'quantize')),
       ...(customRange ? { range: customRange } : { scheme: resolvedScheme }),
       percent: metricConfig.percent,
       label: metricConfig.label,
       ...(metricConfig.domain && Array.isArray(metricConfig.domain) && metricConfig.domain.length === 2
         ? { domain: metricConfig.domain as [number, number] }
         : {}),
+      // Flag for diverging scales to calculate symmetric domain
+      ...((isDivergingScheme || metricConfig.type === 'diverging') && !metricConfig.domain ? { _needsDivergingDomain: true } : {}),
     }
 
     // Create tooltip builder

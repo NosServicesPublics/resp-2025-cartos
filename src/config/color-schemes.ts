@@ -23,7 +23,7 @@ export const FULL_COLOR_SCALES = {
     '#2A1803',
     '#1A0F01',
   ],
-  nouteille: [
+  bouteille: [
     '#EDF3E8',
     '#DCE6D2',
     '#CADABC',
@@ -151,8 +151,8 @@ export const FULL_COLOR_SCALES = {
   ],
 }
 
-// Simplified 5-color schemes for choropleth maps
-// Computed from FULL_COLOR_SCALES by selecting indices: 0 (50), 8 (450), 11 (600), 14 (750), 16 (850)
+// Simplified 5-color schemes for choropleth maps (sequential)
+// Computed from FULL_COLOR_SCALES by selecting indices: 1 (100), 4 (250), 7 (400), 10 (550), 13 (700)
 export const CUSTOM_COLOR_SCHEMES: Record<string, string[]> = Object.fromEntries(
   Object.entries(FULL_COLOR_SCALES).map(([key, colors]) => [
     key,
@@ -160,13 +160,77 @@ export const CUSTOM_COLOR_SCHEMES: Record<string, string[]> = Object.fromEntries
   ]),
 ) as Record<string, string[]>
 
-export const COLOR_SCHEME_OPTIONS: InputEntry[] = [
+// Diverging 6-color schemes (3 colors on each side, no neutral, pivot at 0)
+// Structure: [negative-dark, negative-mid, negative-light, positive-light, positive-mid, positive-dark]
+export const DIVERGING_COLOR_SCHEMES: Record<string, string[]> = {
+  // Fuschia (negative) → Canard (positive), pivot at 0
+  'fuschia-canard': [
+    FULL_COLOR_SCALES.fuschia[12]!, // #A11557 - dark negative
+    FULL_COLOR_SCALES.fuschia[7]!, // #DE84A1 - mid negative
+    FULL_COLOR_SCALES.fuschia[2]!, // #F3CAD6 - light negative
+    FULL_COLOR_SCALES.canard[2]!, // #B1DEDA - light positive
+    FULL_COLOR_SCALES.canard[7]!, // #00A79F - mid positive
+    FULL_COLOR_SCALES.canard[12]!, // #006963 - dark positive
+  ],
+  // Ambre (negative) → Outremer (positive)
+  'ambre-outremer': [
+    FULL_COLOR_SCALES.ambre[12]!, // #844200
+    FULL_COLOR_SCALES.ambre[7]!, // #C1844F
+    FULL_COLOR_SCALES.ambre[2]!, // #EBD0BA
+    FULL_COLOR_SCALES.outremer[2]!, // #D4D3F2
+    FULL_COLOR_SCALES.outremer[7]!, // #8B8DDC
+    FULL_COLOR_SCALES.outremer[12]!, // #3E4EAD
+  ],
+  // Améthyste (negative) → Bouteille (positive)
+  'amethyste-bouteille': [
+    FULL_COLOR_SCALES.amethyste[12]!, // #85308B
+    FULL_COLOR_SCALES.amethyste[7]!, // #BE7BC0
+    FULL_COLOR_SCALES.amethyste[2]!, // #E8CDE8
+    FULL_COLOR_SCALES.bouteille[2]!, // #CADABC
+    FULL_COLOR_SCALES.bouteille[7]!, // #739F52
+    FULL_COLOR_SCALES.bouteille[12]!, // #236200
+  ],
+  // Pétrole (negative) → Ambre (positive)
+  'petrole-ambre': [
+    FULL_COLOR_SCALES.petrole[12]!, // #2A566B
+    FULL_COLOR_SCALES.petrole[7]!, // #6D94AA
+    FULL_COLOR_SCALES.petrole[2]!, // #C8D6DF
+    FULL_COLOR_SCALES.ambre[2]!, // #EBD0BA
+    FULL_COLOR_SCALES.ambre[7]!, // #C1844F
+    FULL_COLOR_SCALES.ambre[12]!, // #844200
+  ],
+  // Outremer (negative) → Fuschia (positive)
+  'outremer-fuschia': [
+    FULL_COLOR_SCALES.outremer[12]!, // #3E4EAD
+    FULL_COLOR_SCALES.outremer[7]!, // #8B8DDC
+    FULL_COLOR_SCALES.outremer[2]!, // #D4D3F2
+    FULL_COLOR_SCALES.fuschia[2]!, // #F3CAD6
+    FULL_COLOR_SCALES.fuschia[7]!, // #D77294
+    FULL_COLOR_SCALES.fuschia[12]!, // #A11557
+  ],
+}
+
+// Sequential color scheme options (for non-diverging metrics)
+export const SEQUENTIAL_COLOR_SCHEME_OPTIONS: InputEntry[] = [
   { label: 'Automatique', key: 'auto' },
   { label: 'Ambré', key: 'ambre' },
-  { label: 'Nouteille', key: 'nouteille' },
+  { label: 'Bouteille', key: 'bouteille' },
   { label: 'Canard', key: 'canard' },
   { label: 'Pétrole', key: 'petrole' },
   { label: 'Outremer', key: 'outremer' },
   { label: 'Améthyste', key: 'amethyste' },
   { label: 'Fuschia', key: 'fuschia' },
 ]
+
+// Diverging color scheme options (for diverging metrics)
+export const DIVERGING_COLOR_SCHEME_OPTIONS: InputEntry[] = [
+  { label: 'Automatique', key: 'auto' },
+  { label: 'Fuschia → Canard', key: 'fuschia-canard' },
+  { label: 'Ambre → Outremer', key: 'ambre-outremer' },
+  { label: 'Améthyste → Bouteille', key: 'amethyste-bouteille' },
+  { label: 'Pétrole → Ambre', key: 'petrole-ambre' },
+  { label: 'Outremer → Fuschia', key: 'outremer-fuschia' },
+]
+
+// Default export for backward compatibility (sequential only)
+export const COLOR_SCHEME_OPTIONS = SEQUENTIAL_COLOR_SCHEME_OPTIONS

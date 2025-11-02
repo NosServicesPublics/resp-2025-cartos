@@ -86,7 +86,31 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
 
     if (values.length > 0) {
       const maxAbs = Math.max(...values.map(Math.abs))
-      config.colorScale.domain = [-maxAbs, maxAbs]
+
+      // For diverging scales: 6 colors (3 negative + 3 positive), 5 thresholds with 0 as pivot
+      // Example: thresholds [-30, -20, 0, 20, 30] creates bins:
+      // < -30 (color 0), [-30, -20) (color 1), [-20, 0) (color 2), [0, 20) (color 3), [20, 30) (color 4), >= 30 (color 5)
+      const numColors = (config.colorScale.range?.length ?? 6)
+      const numSideColors = numColors / 2 // 3 colors per side
+      const thresholds: number[] = []
+
+      // Calculate positive thresholds first, then mirror them for perfect symmetry
+      const positiveThresholds: number[] = []
+      for (let i = 1; i < numSideColors; i++) {
+        const t = (maxAbs * i) / numSideColors
+        positiveThresholds.push(Number(t.toFixed(1)))
+      }
+
+      // Build symmetric thresholds: negative (reversed and negated), 0, positive
+      // Ensure perfect symmetry by re-formatting after negation
+      for (let i = positiveThresholds.length - 1; i >= 0; i--) {
+        const negativeValue = -positiveThresholds[i]!
+        thresholds.push(Number(negativeValue.toFixed(1)))
+      }
+      thresholds.push(0)
+      thresholds.push(...positiveThresholds)
+
+      config.colorScale.domain = thresholds
       delete config.colorScale._needsDivergingDomain
     }
   }
@@ -204,6 +228,12 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
         // Create the final config object
         const finalConfig: any = { ...plotOptions }
 
+        // Handle custom color range (applies to both quantize and threshold scales)
+        if (range !== undefined) {
+          finalConfig.range = range
+          delete finalConfig.scheme
+        }
+
         // Handle domain configuration
         let domainToUse: [number, number] | undefined
         if (options.colorScale?.domain !== undefined) {
@@ -225,7 +255,7 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
         // For quantize scales, we need to set the range explicitly to control the number of bins
         if (plotOptions.type === 'quantize') {
           // If a scheme is specified and no custom range, sample 5 colors from it
-          if (plotOptions.scheme && range === undefined) {
+          if (plotOptions.scheme && !finalConfig.range) {
             const scheme = plotOptions.scheme
             // Get the interpolator function for the scheme
             const interpolator = (d3 as any)[`interpolate${scheme.charAt(0).toUpperCase()}${scheme.slice(1)}`]
@@ -234,11 +264,6 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
               finalConfig.range = [0.1, 0.3, 0.5, 0.7, 0.9].map(t => interpolator(t))
               delete finalConfig.scheme
             }
-          }
-          else if (range !== undefined) {
-            // Custom color range provided
-            finalConfig.range = range
-            delete finalConfig.scheme
           }
 
           // Use threshold scale with nice rounded values instead for better readability

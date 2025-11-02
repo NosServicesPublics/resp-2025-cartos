@@ -51,12 +51,17 @@ export default class MapService {
   setSelectedEntry(entryKey: string, selectedKey: string) {
     this.selectedFormControls.set(entryKey, selectedKey)
 
-    // If metric changed and new metric uses diverging scale, reset colorScheme to 'auto'
+    // If metric changed, validate that the current color scheme is compatible with the new metric type
     if (entryKey === 'metric' && this.serviceConfig) {
       const metricConfig = this.serviceConfig.rendering.colorSchemes[selectedKey]
-      if (metricConfig?.type === 'diverging') {
-        const currentColorScheme = this.getSelectedEntry('colorScheme')
-        if (currentColorScheme && currentColorScheme !== 'auto') {
+      const currentColorScheme = this.getSelectedEntry('colorScheme')
+
+      if (currentColorScheme && currentColorScheme !== 'auto') {
+        const isDivergingMetric = metricConfig?.type === 'diverging'
+        const isDivergingScheme = currentColorScheme.includes('-')
+
+        // Reset to 'auto' if scheme type doesn't match metric type
+        if (isDivergingMetric !== isDivergingScheme) {
           this.selectedFormControls.set('colorScheme', 'auto')
         }
       }
@@ -102,31 +107,9 @@ export default class MapService {
    * Filters color scheme options when metric uses diverging scale
    */
   getFilteredFormControls(): FormControl[] {
-    if (!this.serviceConfig) {
-      return this.formControls
-    }
-
-    const selectedMetricKey = this.getSelectedEntry('metric')
-    if (!selectedMetricKey) {
-      return this.formControls
-    }
-
-    const metricConfig = this.serviceConfig.rendering.colorSchemes[selectedMetricKey]
-    if (!metricConfig || metricConfig.type !== 'diverging') {
-      return this.formControls
-    }
-
-    // Metric uses diverging scale - filter color scheme options
-    return this.formControls.map((control) => {
-      if (control.key !== 'colorScheme') {
-        return control
-      }
-
-      // Only keep 'auto' option for diverging scales
-      return {
-        ...control,
-        entries: control.entries.filter(entry => entry.key === 'auto'),
-      }
-    })
+    // Simply return the form controls as configured
+    // The color scheme options are already set correctly in each service config
+    // (DIVERGING_COLOR_SCHEME_OPTIONS for diverging metrics, COLOR_SCHEME_OPTIONS for sequential)
+    return this.formControls
   }
 }
