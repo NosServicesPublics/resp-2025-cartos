@@ -1,4 +1,4 @@
-import type { MapServiceEntry } from '@/services/map-registry'
+import type { MapRegistry, MapServiceEntry } from '@/services/map-registry'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { loadDepartementsData } from '@/data/geodata-loader'
@@ -11,10 +11,13 @@ export const useMapStore = defineStore('map', () => {
   const geoData = ref<any>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
+  const registry = ref<MapRegistry | null>(null)
 
   // Getters
   const currentMapEntry = computed<MapServiceEntry | null>(() => {
-    return currentMapId.value ? mapRegistry.get(currentMapId.value) || null : null
+    if (!registry.value || !currentMapId.value)
+      return null
+    return registry.value.get(currentMapId.value) || null
   })
 
   const currentService = computed(() => {
@@ -33,7 +36,9 @@ export const useMapStore = defineStore('map', () => {
   })
 
   const availableMaps = computed(() => {
-    return mapRegistry
+    if (!registry.value)
+      return []
+    return registry.value
       .getAll()
       .map(entry => ({
         id: entry.id,
@@ -51,9 +56,14 @@ export const useMapStore = defineStore('map', () => {
     error.value = null
 
     try {
-      const mapEntry = mapRegistry.get(mapId)
+      // Ensure registry is loaded
+      if (!registry.value) {
+        registry.value = await mapRegistry
+      }
+
+      const mapEntry = registry.value.get(mapId)
       if (!mapEntry) {
-        throw new ServiceInitializationError(mapId, undefined, { available: mapRegistry.getIds() })
+        throw new ServiceInitializationError(mapId, undefined, { available: registry.value.getIds() })
       }
 
       // Load geo data if not already loaded
@@ -94,15 +104,25 @@ export const useMapStore = defineStore('map', () => {
   }
 
   const initialize = async () => {
-    const availableMapIds = mapRegistry.getIds()
+    // Load registry first
+    if (!registry.value) {
+      registry.value = await mapRegistry
+    }
+
+    const availableMapIds = registry.value.getIds()
     if (availableMapIds.length > 0 && availableMapIds[0]) {
       await setCurrentMap(availableMapIds[0])
     }
   }
 
   const initializeFromUrlParams = async (urlParams: URLSearchParams) => {
+    // Load registry first
+    if (!registry.value) {
+      registry.value = await mapRegistry
+    }
+
     const mapId = urlParams.get('map')
-    const availableMapIds = mapRegistry.getIds()
+    const availableMapIds = registry.value.getIds()
 
     // Use map from URL if valid, otherwise use first available
     const targetMapId = mapId && availableMapIds.includes(mapId) ? mapId : availableMapIds[0]

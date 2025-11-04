@@ -179,6 +179,7 @@ export function createServiceRenderer(config: ServiceConfig): MapRenderer {
       ...(metricConfig.clamp !== undefined ? { clamp: metricConfig.clamp } : {}),
       ...(metricConfig.divergingColors !== undefined ? { divergingColors: metricConfig.divergingColors } : {}),
       ...(metricConfig.asymmetric !== undefined ? { asymmetric: metricConfig.asymmetric } : {}),
+      ...(metricConfig.tickDecimals !== undefined ? { tickDecimals: metricConfig.tickDecimals } : {}),
       ...(metricConfig.domain && Array.isArray(metricConfig.domain)
         ? { domain: metricConfig.domain.length === 2 ? metricConfig.domain as [number, number] : metricConfig.domain }
         : {}),

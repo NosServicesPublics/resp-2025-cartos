@@ -35,7 +35,7 @@ export class DataCache {
   /**
    * Load CSV data with caching
    */
-  async loadCSVData(url: string, forceRefresh = false): Promise<ServiceDataRow[]> {
+  async loadCSVData(url: string, forceRefresh = false, delimiter = ','): Promise<ServiceDataRow[]> {
     const cacheKey = this.normalizeCacheKey(url)
 
     // Check cache first
@@ -50,7 +50,7 @@ export class DataCache {
     // Load data with error handling
     console.log(`Loading data from ${url}`)
     const data = await ErrorHandler.safeAsync(
-      () => this.fetchCSVData(url),
+      () => this.fetchCSVData(url, delimiter),
       error => new DataLoadError(url, error, { cacheKey }),
     )
 
@@ -63,8 +63,9 @@ export class DataCache {
   /**
    * Fetch CSV data from URL
    */
-  private async fetchCSVData(url: string): Promise<ServiceDataRow[]> {
-    return await d3.csv(url) as ServiceDataRow[]
+  private async fetchCSVData(url: string, delimiter = ','): Promise<ServiceDataRow[]> {
+    const text = await fetch(url).then(r => r.text())
+    return d3.dsvFormat(delimiter).parse(text) as ServiceDataRow[]
   }
 
   /**
@@ -194,6 +195,6 @@ export function getDataCache(): DataCache {
 /**
  * Load CSV data with caching (convenience function)
  */
-export async function loadCachedCSVData(url: string, forceRefresh = false): Promise<ServiceDataRow[]> {
-  return getDataCache().loadCSVData(url, forceRefresh)
+export async function loadCachedCSVData(url: string, forceRefresh = false, delimiter = ','): Promise<ServiceDataRow[]> {
+  return getDataCache().loadCSVData(url, forceRefresh, delimiter)
 }

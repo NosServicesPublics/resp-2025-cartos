@@ -96,6 +96,7 @@ export interface MapRenderer {
 export interface MapServiceOptions {
   title: string
   dataFile: string
+  delimiter?: string
   formControls: FormControl[]
   dataPreprocessor?: (rows: ServiceDataRow[]) => ServiceDataRow[]
 }

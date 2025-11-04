@@ -6,6 +6,7 @@ import { loadCachedCSVData } from '@/data/data-cache'
 export default class MapService {
   title: string
   dataFile: string
+  delimiter: string
   data: ServiceDataRow[] = []
   formControls: FormControl[]
   selectedFormControls: Map<string, string> = new Map() // key: entry key, value: selected entry key
@@ -16,11 +17,13 @@ export default class MapService {
   constructor({
     title,
     dataFile,
+    delimiter = ',',
     formControls,
     dataPreprocessor,
   }: MapServiceOptions) {
     this.title = title
     this.dataFile = dataFile
+    this.delimiter = delimiter
     this.formControls = formControls
     this.dataPreprocessor = dataPreprocessor
     for (const control of this.formControls) {
@@ -31,7 +34,7 @@ export default class MapService {
   }
 
   async loadData(): Promise<void> {
-    let data = await loadCachedCSVData(this.dataFile)
+    let data = await loadCachedCSVData(this.dataFile, false, this.delimiter)
 
     // Apply data preprocessor if provided
     if (this.dataPreprocessor) {

@@ -22,6 +22,7 @@ export interface MetricColorScheme {
   divergingColors?: number // Number of colors for auto-calculated diverging scales (default: 6)
   asymmetric?: boolean // Allow asymmetric diverging scales based on actual data distribution
   colorIndices?: number[] // Manual color indices from full scales (for diverging schemes, negative then positive)
+  tickDecimals?: number // Number of decimal places for tick formatting (default: auto-detected)
 }
 
 /**
@@ -71,6 +72,9 @@ export interface ServiceConfig {
   id: string
   title: string
   dataFile: string
+
+  /** CSV delimiter (default: ',' for comma-delimited, ';' for semicolon-delimited) */
+  delimiter?: string
 
   /** Entry definitions for form controls */
   formControls: FormControl[]

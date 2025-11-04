@@ -17,6 +17,7 @@ interface ColorScaleConfig {
   clamp?: boolean
   divergingColors?: number // Number of colors for auto-calculated diverging scales (default: 6)
   asymmetric?: boolean // Allow asymmetric diverging scales based on actual data distribution
+  tickDecimals?: number // Number of decimal places for tick labels
   _needsDivergingDomain?: boolean
   _needsRoundedThresholds?: boolean
 }
@@ -271,7 +272,7 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
         const merged = { ...defaults, ...options.colorScale }
 
         // Extract percent option (custom option, not a Plot option)
-        const { percent, domain, range, ...plotOptions } = merged
+        const { percent, domain, range, tickDecimals, ...plotOptions } = merged
 
         // Create the final config object
         const finalConfig: any = { ...plotOptions }
@@ -375,6 +376,11 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
           // For threshold scales, determine decimal places based on the value's magnitude
           // This is evaluated at render time, so it works even when domain is calculated later
           finalConfig.tickFormat = (d: number) => {
+            // If tickDecimals is explicitly set, use it
+            if (tickDecimals !== undefined) {
+              return d.toFixed(tickDecimals)
+            }
+            // Otherwise, auto-detect based on value magnitude
             // Check if this is a small value (0-10 range)
             if (d < 10) {
               // For small values, use 1 decimal place

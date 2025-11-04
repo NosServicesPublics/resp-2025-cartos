@@ -14,6 +14,7 @@ export class ServiceFactory {
     const service = new MapService({
       title: config.title,
       dataFile: config.dataFile,
+      delimiter: config.delimiter,
       formControls: config.formControls,
       dataPreprocessor: config.dataPreprocessor,
     })
