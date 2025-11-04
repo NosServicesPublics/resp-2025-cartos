@@ -160,54 +160,160 @@ export const CUSTOM_COLOR_SCHEMES: Record<string, string[]> = Object.fromEntries
   ]),
 ) as Record<string, string[]>
 
+/**
+ * Generate a diverging color scheme by sampling from two full color scales
+ * @param negativeScale - Full 19-color scale for negative values (dark to light)
+ * @param positiveScale - Full 19-color scale for positive values (light to dark)
+ * @param numColors - Total number of colors (must be even, default: 6)
+ * @param minIndex - Minimum index to sample from (default: 1, for lighter colors)
+ * @param maxIndex - Maximum index to sample from (default: 13, avoiding darkest colors)
+ * @returns Array of colors evenly sampled from both scales
+ */
+function createDivergingScheme(
+  negativeScale: readonly string[],
+  positiveScale: readonly string[],
+  numColors: number = 6,
+  minIndex: number = 1,
+  maxIndex: number = 13,
+): string[] {
+  const colorsPerSide = numColors / 2
+  const colors: string[] = []
+
+  // Sample negative side (from dark to light, indices high to low)
+  for (let i = 0; i < colorsPerSide; i++) {
+    const index = Math.round((maxIndex - minIndex) * (colorsPerSide - 1 - i) / (colorsPerSide - 1)) + minIndex
+    colors.push(negativeScale[index]!)
+  }
+
+  // Sample positive side (from light to dark, indices low to high)
+  for (let i = 0; i < colorsPerSide; i++) {
+    const index = Math.round((maxIndex - minIndex) * i / (colorsPerSide - 1)) + minIndex
+    colors.push(positiveScale[index]!)
+  }
+
+  return colors
+}
+
 // Diverging 6-color schemes (3 colors on each side, no neutral, pivot at 0)
-// Structure: [negative-dark, negative-mid, negative-light, positive-light, positive-mid, positive-dark]
+// Can be dynamically sampled for different numbers of colors
 export const DIVERGING_COLOR_SCHEMES: Record<string, string[]> = {
   // Fuschia (negative) → Canard (positive), pivot at 0
-  'fuschia-canard': [
-    FULL_COLOR_SCALES.fuschia[12]!, // #A11557 - dark negative
-    FULL_COLOR_SCALES.fuschia[7]!, // #DE84A1 - mid negative
-    FULL_COLOR_SCALES.fuschia[2]!, // #F3CAD6 - light negative
-    FULL_COLOR_SCALES.canard[2]!, // #B1DEDA - light positive
-    FULL_COLOR_SCALES.canard[7]!, // #00A79F - mid positive
-    FULL_COLOR_SCALES.canard[12]!, // #006963 - dark positive
-  ],
+  'fuschia-canard': createDivergingScheme(FULL_COLOR_SCALES.fuschia, FULL_COLOR_SCALES.canard, 6),
+  'canard-fuschia': createDivergingScheme(FULL_COLOR_SCALES.canard, FULL_COLOR_SCALES.fuschia, 6),
   // Ambre (negative) → Outremer (positive)
-  'ambre-outremer': [
-    FULL_COLOR_SCALES.ambre[12]!, // #844200
-    FULL_COLOR_SCALES.ambre[7]!, // #C1844F
-    FULL_COLOR_SCALES.ambre[2]!, // #EBD0BA
-    FULL_COLOR_SCALES.outremer[2]!, // #D4D3F2
-    FULL_COLOR_SCALES.outremer[7]!, // #8B8DDC
-    FULL_COLOR_SCALES.outremer[12]!, // #3E4EAD
-  ],
+  'ambre-outremer': createDivergingScheme(FULL_COLOR_SCALES.ambre, FULL_COLOR_SCALES.outremer, 6),
+  'outremer-ambre': createDivergingScheme(FULL_COLOR_SCALES.outremer, FULL_COLOR_SCALES.ambre, 6),
   // Améthyste (negative) → Bouteille (positive)
-  'amethyste-bouteille': [
-    FULL_COLOR_SCALES.amethyste[12]!, // #85308B
-    FULL_COLOR_SCALES.amethyste[7]!, // #BE7BC0
-    FULL_COLOR_SCALES.amethyste[2]!, // #E8CDE8
-    FULL_COLOR_SCALES.bouteille[2]!, // #CADABC
-    FULL_COLOR_SCALES.bouteille[7]!, // #739F52
-    FULL_COLOR_SCALES.bouteille[12]!, // #236200
-  ],
+  'amethyste-bouteille': createDivergingScheme(FULL_COLOR_SCALES.amethyste, FULL_COLOR_SCALES.bouteille, 6),
+  'bouteille-amethyste': createDivergingScheme(FULL_COLOR_SCALES.bouteille, FULL_COLOR_SCALES.amethyste, 6),
   // Pétrole (negative) → Ambre (positive)
-  'petrole-ambre': [
-    FULL_COLOR_SCALES.petrole[12]!, // #2A566B
-    FULL_COLOR_SCALES.petrole[7]!, // #6D94AA
-    FULL_COLOR_SCALES.petrole[2]!, // #C8D6DF
-    FULL_COLOR_SCALES.ambre[2]!, // #EBD0BA
-    FULL_COLOR_SCALES.ambre[7]!, // #C1844F
-    FULL_COLOR_SCALES.ambre[12]!, // #844200
-  ],
+  'petrole-ambre': createDivergingScheme(FULL_COLOR_SCALES.petrole, FULL_COLOR_SCALES.ambre, 6),
+  'ambre-petrole': createDivergingScheme(FULL_COLOR_SCALES.ambre, FULL_COLOR_SCALES.petrole, 6),
   // Outremer (negative) → Fuschia (positive)
-  'outremer-fuschia': [
-    FULL_COLOR_SCALES.outremer[12]!, // #3E4EAD
-    FULL_COLOR_SCALES.outremer[7]!, // #8B8DDC
-    FULL_COLOR_SCALES.outremer[2]!, // #D4D3F2
-    FULL_COLOR_SCALES.fuschia[2]!, // #F3CAD6
-    FULL_COLOR_SCALES.fuschia[7]!, // #D77294
-    FULL_COLOR_SCALES.fuschia[12]!, // #A11557
-  ],
+  'outremer-fuschia': createDivergingScheme(FULL_COLOR_SCALES.outremer, FULL_COLOR_SCALES.fuschia, 6),
+  'fuschia-outremer': createDivergingScheme(FULL_COLOR_SCALES.fuschia, FULL_COLOR_SCALES.outremer, 6),
+}
+
+/**
+ * Get diverging colors by explicit indices from full scales
+ * @param schemeName - Base scheme name (e.g., 'fuschia-canard')
+ * @param indices - Array of indices: negative side indices, then positive side indices
+ * @returns Array of colors
+ */
+export function getDivergingSchemeByIndices(
+  schemeName: string,
+  indices: number[],
+): string[] | undefined {
+  const schemeMap: Record<string, [readonly string[], readonly string[]]> = {
+    'fuschia-canard': [FULL_COLOR_SCALES.fuschia, FULL_COLOR_SCALES.canard],
+    'canard-fuschia': [FULL_COLOR_SCALES.canard, FULL_COLOR_SCALES.fuschia],
+    'ambre-outremer': [FULL_COLOR_SCALES.ambre, FULL_COLOR_SCALES.outremer],
+    'outremer-ambre': [FULL_COLOR_SCALES.outremer, FULL_COLOR_SCALES.ambre],
+    'amethyste-bouteille': [FULL_COLOR_SCALES.amethyste, FULL_COLOR_SCALES.bouteille],
+    'bouteille-amethyste': [FULL_COLOR_SCALES.bouteille, FULL_COLOR_SCALES.amethyste],
+    'petrole-ambre': [FULL_COLOR_SCALES.petrole, FULL_COLOR_SCALES.ambre],
+    'ambre-petrole': [FULL_COLOR_SCALES.ambre, FULL_COLOR_SCALES.petrole],
+    'outremer-fuschia': [FULL_COLOR_SCALES.outremer, FULL_COLOR_SCALES.fuschia],
+    'fuschia-outremer': [FULL_COLOR_SCALES.fuschia, FULL_COLOR_SCALES.outremer],
+  }
+
+  const scales = schemeMap[schemeName]
+  if (!scales)
+    return undefined
+
+  const colors: string[] = []
+
+  // Process each index
+  for (const index of indices) {
+    // Negative indices (0-18) use the negative scale
+    // Positive indices (19-37) use the positive scale
+    if (index < 19) {
+      colors.push(scales[0][index]!)
+    }
+    else {
+      colors.push(scales[1][index - 19]!)
+    }
+  }
+
+  return colors
+}
+
+/**
+ * Get a diverging color scheme with a specific number of colors
+ * @param schemeName - Base scheme name (e.g., 'fuschia-canard')
+ * @param numColors - Total number of colors (must be even for symmetric, any number for asymmetric)
+ * @param minIndex - Minimum index to sample from (default: 1, matches sequential schemes)
+ * @param maxIndex - Maximum index to sample from (default: 13, matches sequential schemes)
+ * @param numNegative - Number of colors for negative side (for asymmetric scales)
+ * @param numPositive - Number of colors for positive side (for asymmetric scales)
+ * @returns Array of colors sampled from the full scales
+ */
+export function getDivergingScheme(
+  schemeName: string,
+  numColors: number = 6,
+  minIndex: number = 1,
+  maxIndex: number = 13,
+  numNegative?: number,
+  numPositive?: number,
+): string[] | undefined {
+  const schemeMap: Record<string, [readonly string[], readonly string[]]> = {
+    'fuschia-canard': [FULL_COLOR_SCALES.fuschia, FULL_COLOR_SCALES.canard],
+    'canard-fuschia': [FULL_COLOR_SCALES.canard, FULL_COLOR_SCALES.fuschia],
+    'ambre-outremer': [FULL_COLOR_SCALES.ambre, FULL_COLOR_SCALES.outremer],
+    'outremer-ambre': [FULL_COLOR_SCALES.outremer, FULL_COLOR_SCALES.ambre],
+    'amethyste-bouteille': [FULL_COLOR_SCALES.amethyste, FULL_COLOR_SCALES.bouteille],
+    'bouteille-amethyste': [FULL_COLOR_SCALES.bouteille, FULL_COLOR_SCALES.amethyste],
+    'petrole-ambre': [FULL_COLOR_SCALES.petrole, FULL_COLOR_SCALES.ambre],
+    'ambre-petrole': [FULL_COLOR_SCALES.ambre, FULL_COLOR_SCALES.petrole],
+    'outremer-fuschia': [FULL_COLOR_SCALES.outremer, FULL_COLOR_SCALES.fuschia],
+    'fuschia-outremer': [FULL_COLOR_SCALES.fuschia, FULL_COLOR_SCALES.outremer],
+  }
+
+  const scales = schemeMap[schemeName]
+  if (!scales)
+    return undefined
+
+  // Asymmetric: use specified counts for each side
+  if (numNegative !== undefined && numPositive !== undefined) {
+    const colors: string[] = []
+
+    // Sample negative side (from dark to light)
+    for (let i = 0; i < numNegative; i++) {
+      const index = Math.round((maxIndex - minIndex) * (numNegative - 1 - i) / Math.max(1, numNegative - 1)) + minIndex
+      colors.push(scales[0][index]!)
+    }
+
+    // Sample positive side (from light to dark)
+    for (let i = 0; i < numPositive; i++) {
+      const index = Math.round((maxIndex - minIndex) * i / Math.max(1, numPositive - 1)) + minIndex
+      colors.push(scales[1][index]!)
+    }
+
+    return colors
+  }
+
+  // Symmetric: use standard createDivergingScheme
+  return createDivergingScheme(scales[0], scales[1], numColors, minIndex, maxIndex)
 }
 
 // Sequential color scheme options (for non-diverging metrics)
@@ -226,10 +332,15 @@ export const SEQUENTIAL_COLOR_SCHEME_OPTIONS: InputEntry[] = [
 export const DIVERGING_COLOR_SCHEME_OPTIONS: InputEntry[] = [
   { label: 'Automatique', key: 'auto' },
   { label: 'Fuschia → Canard', key: 'fuschia-canard' },
+  { label: 'Canard → Fuschia', key: 'canard-fuschia' },
   { label: 'Ambre → Outremer', key: 'ambre-outremer' },
+  { label: 'Outremer → Ambre', key: 'outremer-ambre' },
   { label: 'Améthyste → Bouteille', key: 'amethyste-bouteille' },
+  { label: 'Bouteille → Améthyste', key: 'bouteille-amethyste' },
   { label: 'Pétrole → Ambre', key: 'petrole-ambre' },
+  { label: 'Ambre → Pétrole', key: 'ambre-petrole' },
   { label: 'Outremer → Fuschia', key: 'outremer-fuschia' },
+  { label: 'Fuschia → Outremer', key: 'fuschia-outremer' },
 ]
 
 // Default export for backward compatibility (sequential only)

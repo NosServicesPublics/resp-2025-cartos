@@ -14,6 +14,9 @@ interface ColorScaleConfig {
   tickFormat?: (d: number) => string
   percent?: boolean
   range?: string[]
+  clamp?: boolean
+  divergingColors?: number // Number of colors for auto-calculated diverging scales (default: 6)
+  asymmetric?: boolean // Allow asymmetric diverging scales based on actual data distribution
   _needsDivergingDomain?: boolean
   _needsRoundedThresholds?: boolean
 }
@@ -78,37 +81,82 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
   const dataIndex = buildDataIndex(config)
 
   // ========== DIVERGING DOMAIN CALCULATION ==========
-  // Calculate symmetric domain for diverging scales if needed
+  // Calculate symmetric or asymmetric domain for diverging scales if needed
   if (config.colorScale._needsDivergingDomain) {
     const values = Array.from(dataIndex.values())
       .map(entry => entry.value)
       .filter(v => v !== null) as number[]
 
     if (values.length > 0) {
-      const maxAbs = Math.max(...values.map(Math.abs))
-
-      // For diverging scales: 6 colors (3 negative + 3 positive), 5 thresholds with 0 as pivot
-      // Example: thresholds [-30, -20, 0, 20, 30] creates bins:
-      // < -30 (color 0), [-30, -20) (color 1), [-20, 0) (color 2), [0, 20) (color 3), [20, 30) (color 4), >= 30 (color 5)
-      const numColors = (config.colorScale.range?.length ?? 6)
-      const numSideColors = numColors / 2 // 3 colors per side
+      const numColors = (config.colorScale.range?.length ?? config.colorScale.divergingColors ?? 6)
       const thresholds: number[] = []
 
-      // Calculate positive thresholds first, then mirror them for perfect symmetry
-      const positiveThresholds: number[] = []
-      for (let i = 1; i < numSideColors; i++) {
-        const t = (maxAbs * i) / numSideColors
-        positiveThresholds.push(Number(t.toFixed(1)))
-      }
+      if (config.colorScale.asymmetric) {
+        // Asymmetric diverging scale: distribute colors based on actual data range on each side
+        const negativeValues = values.filter(v => v < 0)
+        const positiveValues = values.filter(v => v > 0)
 
-      // Build symmetric thresholds: negative (reversed and negated), 0, positive
-      // Ensure perfect symmetry by re-formatting after negation
-      for (let i = positiveThresholds.length - 1; i >= 0; i--) {
-        const negativeValue = -positiveThresholds[i]!
-        thresholds.push(Number(negativeValue.toFixed(1)))
+        const minNeg = negativeValues.length > 0 ? Math.min(...negativeValues) : 0
+        const maxPos = positiveValues.length > 0 ? Math.max(...positiveValues) : 0
+
+        // Calculate proportion of colors for each side based on data density
+        const negRange = Math.abs(minNeg)
+        const posRange = Math.abs(maxPos)
+        const totalRange = negRange + posRange
+
+        // Distribute colors proportionally, but ensure at least 1 color per side if data exists
+        let negColors = Math.max(1, Math.round((negRange / totalRange) * (numColors - 1)))
+        let posColors = Math.max(1, Math.round((posRange / totalRange) * (numColors - 1)))
+
+        // Adjust if total doesn't match (due to rounding)
+        const colorDiff = (negColors + posColors) - numColors
+        if (colorDiff > 0) {
+          // Remove from the side with more colors
+          if (negColors > posColors)
+            negColors -= colorDiff
+          else posColors -= colorDiff
+        }
+        else if (colorDiff < 0) {
+          // Add to the side with more range
+          if (negRange > posRange)
+            negColors -= colorDiff
+          else posColors -= colorDiff
+        }
+
+        // Generate negative thresholds
+        for (let i = 1; i < negColors; i++) {
+          const t = minNeg + (0 - minNeg) * i / negColors
+          thresholds.push(Number(t.toFixed(1)))
+        }
+
+        // Add pivot at 0
+        thresholds.push(0)
+
+        // Generate positive thresholds
+        for (let i = 1; i < posColors; i++) {
+          const t = (maxPos * i) / posColors
+          thresholds.push(Number(t.toFixed(1)))
+        }
       }
-      thresholds.push(0)
-      thresholds.push(...positiveThresholds)
+      else {
+        // Symmetric diverging scale: mirror thresholds around 0
+        const maxAbs = Math.max(...values.map(Math.abs))
+        const numSideColors = numColors / 2
+        const positiveThresholds: number[] = []
+
+        for (let i = 1; i < numSideColors; i++) {
+          const t = (maxAbs * i) / numSideColors
+          positiveThresholds.push(Number(t.toFixed(1)))
+        }
+
+        // Build symmetric thresholds: negative (reversed and negated), 0, positive
+        for (let i = positiveThresholds.length - 1; i >= 0; i--) {
+          const negativeValue = -positiveThresholds[i]!
+          thresholds.push(Number(negativeValue.toFixed(1)))
+        }
+        thresholds.push(0)
+        thresholds.push(...positiveThresholds)
+      }
 
       config.colorScale.domain = thresholds
       delete config.colorScale._needsDivergingDomain

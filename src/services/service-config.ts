@@ -18,6 +18,10 @@ export interface MetricColorScheme {
   domain?: number[]
   percent?: boolean
   legend?: boolean
+  clamp?: boolean
+  divergingColors?: number // Number of colors for auto-calculated diverging scales (default: 6)
+  asymmetric?: boolean // Allow asymmetric diverging scales based on actual data distribution
+  colorIndices?: number[] // Manual color indices from full scales (for diverging schemes, negative then positive)
 }
 
 /**
@@ -45,6 +49,8 @@ export interface ServiceRenderConfig {
     rowKey: string
     /** Key for extracting department code from geographic features */
     featureKey: string
+    /** Optional: Column name for simple choropleths without metric control */
+    valueColumn?: string
   }
 
   /** Tooltip configuration */
@@ -121,9 +127,14 @@ export function getTitleTemplate(
     return template
   }
 
-  if (typeof template === 'object' && facilityKey) {
+  if (typeof template === 'object') {
     // Facility-specific template - try to find specific one, fallback to default
-    return template[facilityKey] || template.default || `{facility} - ${metricKey}`
+    if (facilityKey && template[facilityKey]) {
+      return template[facilityKey]
+    }
+    if (template.default) {
+      return template.default
+    }
   }
 
   // Fallback

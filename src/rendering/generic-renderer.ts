@@ -33,7 +33,7 @@ import {
   schemeYlOrBr,
   schemeYlOrRd,
 } from 'd3'
-import { CUSTOM_COLOR_SCHEMES, DIVERGING_COLOR_SCHEMES, FULL_COLOR_SCALES } from '@/config/color-schemes'
+import { CUSTOM_COLOR_SCHEMES, DIVERGING_COLOR_SCHEMES, FULL_COLOR_SCALES, getDivergingScheme, getDivergingSchemeByIndices } from '@/config/color-schemes'
 import { renderChoropleth } from '@/rendering/render-choropleth'
 import { defaultFeatureKey, defaultNumberNormalizer, getTitleTemplate, interpolateTitle } from '@/services/service-config'
 
@@ -46,7 +46,10 @@ export function createServiceRenderer(config: ServiceConfig): MapRenderer {
 
     // Get current selections
     const facilityLabel = service.getSelectedEntryLabel('facility') || '-'
-    const metricKey = service.getSelectedEntry('metric') || ''
+
+    // Support simple choropleths without metric control
+    // If no metric control exists, use 'default' as the metric key
+    const metricKey = service.getSelectedEntry('metric') || 'default'
     const metricConfig = renderConfig.colorSchemes[metricKey]
 
     if (!metricConfig) {
@@ -57,9 +60,52 @@ export function createServiceRenderer(config: ServiceConfig): MapRenderer {
 
     // Check if diverging scheme is selected
     const isDivergingScheme = selectedSchemeKey && DIVERGING_COLOR_SCHEMES[selectedSchemeKey]
-    const customRange = selectedSchemeKey && selectedSchemeKey !== 'auto'
-      ? (DIVERGING_COLOR_SCHEMES[selectedSchemeKey] ?? CUSTOM_COLOR_SCHEMES[selectedSchemeKey] ?? undefined)
-      : undefined
+
+    // Calculate the number of colors needed based on domain or divergingColors setting
+    let numColorsNeeded = metricConfig.divergingColors ?? 6
+    let asymmetricSampling: { negative: number, positive: number } | undefined
+
+    if (metricConfig.domain && Array.isArray(metricConfig.domain) && metricConfig.domain.length > 2) {
+      // For threshold scales, number of colors = number of thresholds + 1
+      numColorsNeeded = metricConfig.domain.length + 1
+
+      // Check if thresholds pivot around 0 for asymmetric color distribution
+      const zeroIndex = metricConfig.domain.indexOf(0)
+      if (zeroIndex !== -1) {
+        // Asymmetric: count thresholds on each side of 0
+        const negativeThresholds = zeroIndex // number before 0
+        const positiveThresholds = metricConfig.domain.length - zeroIndex - 1 // number after 0
+        asymmetricSampling = {
+          negative: negativeThresholds + 1, // +1 for the color bin
+          positive: positiveThresholds + 1,
+        }
+      }
+    }
+
+    // Get custom range, with dynamic color sampling for diverging schemes
+    let customRange: string[] | undefined
+    if (selectedSchemeKey && selectedSchemeKey !== 'auto') {
+      // Check if manual color indices are provided
+      if (metricConfig.colorIndices && isDivergingScheme) {
+        // Use explicit color indices from config
+        customRange = getDivergingSchemeByIndices(selectedSchemeKey, metricConfig.colorIndices)
+      }
+      else if (asymmetricSampling && isDivergingScheme) {
+        // Use asymmetric sampling for diverging schemes with manual thresholds around 0
+        customRange = getDivergingScheme(
+          selectedSchemeKey,
+          asymmetricSampling.negative + asymmetricSampling.positive,
+          1,
+          13,
+          asymmetricSampling.negative,
+          asymmetricSampling.positive,
+        )
+      }
+      else {
+        // Standard symmetric sampling
+        customRange = getDivergingScheme(selectedSchemeKey, numColorsNeeded) ?? CUSTOM_COLOR_SCHEMES[selectedSchemeKey]
+      }
+    }
 
     const resolvedScheme = !selectedSchemeKey || selectedSchemeKey === 'auto' || customRange
       ? metricConfig.scheme
@@ -95,9 +141,15 @@ export function createServiceRenderer(config: ServiceConfig): MapRenderer {
     const tabularData = service.filteredData
 
     // Create value accessor
+    // For simple choropleths without metric control, use valueColumn if specified
     const valueAccessor = renderConfig.valueProcessor
       ? (row: ServiceDataRow) => renderConfig.valueProcessor!(row, metricKey)
-      : (row: ServiceDataRow) => row[metricKey]
+      : (row: ServiceDataRow) => {
+          const columnName = metricKey === 'default' && renderConfig.dataKeys.valueColumn
+            ? renderConfig.dataKeys.valueColumn
+            : metricKey
+          return row[columnName]
+        }
 
     // Create row key accessor
     const rowKeyAccessor = (row: ServiceDataRow) => {
@@ -124,10 +176,13 @@ export function createServiceRenderer(config: ServiceConfig): MapRenderer {
       ...(customRange ? { range: customRange } : { scheme: resolvedScheme }),
       percent: metricConfig.percent,
       label: metricConfig.label,
-      ...(metricConfig.domain && Array.isArray(metricConfig.domain) && metricConfig.domain.length === 2
-        ? { domain: metricConfig.domain as [number, number] }
+      ...(metricConfig.clamp !== undefined ? { clamp: metricConfig.clamp } : {}),
+      ...(metricConfig.divergingColors !== undefined ? { divergingColors: metricConfig.divergingColors } : {}),
+      ...(metricConfig.asymmetric !== undefined ? { asymmetric: metricConfig.asymmetric } : {}),
+      ...(metricConfig.domain && Array.isArray(metricConfig.domain)
+        ? { domain: metricConfig.domain.length === 2 ? metricConfig.domain as [number, number] : metricConfig.domain }
         : {}),
-      // Flag for diverging scales to calculate symmetric domain
+      // Flag for diverging scales to calculate symmetric or asymmetric domain
       ...((isDivergingScheme || metricConfig.type === 'diverging') && !metricConfig.domain ? { _needsDivergingDomain: true } : {}),
     }
 

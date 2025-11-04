@@ -98,6 +98,10 @@ export default class MapService {
       if (d.facility !== undefined) {
         return d.facility === selectedFacility
       }
+      // For inegalites-v2 data: filter by "typeeq_id" column
+      if (d.typeeq_id !== undefined) {
+        return d.typeeq_id === selectedFacility
+      }
       return true
     })
   }
