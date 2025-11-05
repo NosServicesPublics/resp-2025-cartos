@@ -52,6 +52,7 @@ export interface ColorScaleConfig {
   percent?: boolean
   label: string
   range?: string[]
+  domain?: number[] | string[] | [number, number]
 }
 
 /**
@@ -74,12 +75,12 @@ export interface ChoroplethConfig {
   featureKey: (feature: Feature<Geometry>) => string
   rowKey: (row: ServiceDataRow) => string | undefined
   valueAccessor: (row: ServiceDataRow) => any
-  numberNormalizer: (value: any) => number | null
+  numberNormalizer: (value: any) => number | string | null
   colorScale: ColorScaleConfig
   backgroundGeometry?: Geometry | null
   overlayMeshes?: OverlayMesh[]
   outlineGeometry?: Geometry | null
-  titleBuilder: (feature: Feature<Geometry>, value: number | null, row?: ServiceDataRow) => string
+  titleBuilder: (feature: Feature<Geometry>, value: number | string | null, row?: ServiceDataRow) => string
 }
 
 /**

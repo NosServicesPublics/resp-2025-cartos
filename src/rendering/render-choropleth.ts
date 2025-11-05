@@ -10,7 +10,7 @@ interface ColorScaleConfig {
   type?: string
   scheme?: string
   label?: string
-  domain?: [number, number] | number[]
+  domain?: [number, number] | number[] | string[]
   tickFormat?: (d: number) => string
   percent?: boolean
   range?: string[]
@@ -43,13 +43,13 @@ interface ChoroplethConfig extends Omit<BaseChoroplethConfig, 'colorScale' | 'ro
 
 interface DataIndexEntry {
   row: ServiceDataRow
-  value: number | null
+  value: number | string | null
 }
 
 interface CentroidPoint {
   lon: number
   lat: number
-  value: number | null
+  value: number | string | null
   feature: Feature<Geometry>
   row: ServiceDataRow | null
   name: string
@@ -427,7 +427,7 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
       // === Tooltips ===
       // Function to build tooltip text
       // Receives: (feature, value, row) -> string
-      titleBuilder: options.titleBuilder ?? ((feature: Feature<Geometry>, value: number | null, _row: ServiceDataRow | undefined) => {
+      titleBuilder: options.titleBuilder ?? ((feature: Feature<Geometry>, value: number | string | null, _row: ServiceDataRow | undefined) => {
         const name = getFeatureName(feature)
         const displayValue = formatValue(value)
         return `${name}\n${displayValue}`
@@ -678,15 +678,20 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
   }
 
   /**
-   * Formats a numeric value for display in tooltips.
+   * Formats a value for display in tooltips.
    *
    * - null/undefined -> "—"
+   * - string -> return as-is (for ordinal scales)
    * - 0-1 range -> percentage with 1 decimal
    * - other -> plain number
    */
-  function formatValue(value: number | null): string {
+  function formatValue(value: number | string | null): string {
     if (value == null)
       return '—'
+
+    // For ordinal scales, value is a string
+    if (typeof value === 'string')
+      return value
 
     // Assume values between 0-1 are proportions/rates
     if (value >= 0 && value <= 1) {

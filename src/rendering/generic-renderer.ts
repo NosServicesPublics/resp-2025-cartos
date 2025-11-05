@@ -35,7 +35,7 @@ import {
 } from 'd3'
 import { CUSTOM_COLOR_SCHEMES, DIVERGING_COLOR_SCHEMES, FULL_COLOR_SCALES, getDivergingScheme, getDivergingSchemeByIndices } from '@/config/color-schemes'
 import { renderChoropleth } from '@/rendering/render-choropleth'
-import { defaultFeatureKey, defaultNumberNormalizer, getTitleTemplate, interpolateTitle } from '@/services/service-config'
+import { academyFeatureKey, defaultFeatureKey, defaultNumberNormalizer, getTitleTemplate, interpolateTitle } from '@/services/service-config'
 
 /**
  * Creates a generic renderer function from service configuration
@@ -69,15 +69,17 @@ export function createServiceRenderer(config: ServiceConfig): MapRenderer {
       // For threshold scales, number of colors = number of thresholds + 1
       numColorsNeeded = metricConfig.domain.length + 1
 
-      // Check if thresholds pivot around 0 for asymmetric color distribution
-      const zeroIndex = metricConfig.domain.indexOf(0)
-      if (zeroIndex !== -1) {
-        // Asymmetric: count thresholds on each side of 0
-        const negativeThresholds = zeroIndex // number before 0
-        const positiveThresholds = metricConfig.domain.length - zeroIndex - 1 // number after 0
-        asymmetricSampling = {
-          negative: negativeThresholds + 1, // +1 for the color bin
-          positive: positiveThresholds + 1,
+      // Check if thresholds pivot around 0 for asymmetric color distribution (only for numeric domains)
+      if (typeof metricConfig.domain[0] === 'number') {
+        const zeroIndex = (metricConfig.domain as number[]).indexOf(0)
+        if (zeroIndex !== -1) {
+          // Asymmetric: count thresholds on each side of 0
+          const negativeThresholds = zeroIndex // number before 0
+          const positiveThresholds = metricConfig.domain.length - zeroIndex - 1 // number after 0
+          asymmetricSampling = {
+            negative: negativeThresholds + 1, // +1 for the color bin
+            positive: positiveThresholds + 1,
+          }
         }
       }
     }
@@ -152,18 +154,22 @@ export function createServiceRenderer(config: ServiceConfig): MapRenderer {
         }
 
     // Create row key accessor
-    const rowKeyAccessor = (row: ServiceDataRow) => {
-      const keyValue = row[renderConfig.dataKeys.rowKey]
-      return String(keyValue).toUpperCase().padStart(2, '0')
-    }
+    const rowKeyAccessor = renderConfig.rowKeyProcessor
+      ? (row: ServiceDataRow) => renderConfig.rowKeyProcessor!(row, renderConfig.dataKeys.rowKey)
+      : (row: ServiceDataRow) => {
+          const keyValue = row[renderConfig.dataKeys.rowKey]
+          return String(keyValue).toUpperCase().padStart(2, '0')
+        }
 
     // Create feature key accessor
     const featureKeyAccessor = renderConfig.dataKeys.featureKey === 'default'
       ? defaultFeatureKey
-      : (f: any) => {
-          const keyValue = f.properties?.[renderConfig.dataKeys.featureKey]
-          return String(keyValue).toUpperCase().padStart(2, '0')
-        }
+      : renderConfig.dataKeys.featureKey === 'academy'
+        ? academyFeatureKey
+        : (f: any) => {
+            const keyValue = f.properties?.[renderConfig.dataKeys.featureKey]
+            return String(keyValue).toUpperCase().padStart(2, '0')
+          }
 
     // Create number normalizer
     const numberNormalizer = renderConfig.numberNormalizer || defaultNumberNormalizer
@@ -224,11 +230,11 @@ function createTooltipBuilder(
   facilityLabel: string,
   currentMetric: string,
   currentMetricConfig: any,
-  numberNormalizer: (value: any) => number | null,
+  numberNormalizer: (value: any) => number | string | null,
   allMetricConfigs: Record<string, any>,
 ) {
-  return (feature: any, value: number | null, row?: ServiceDataRow) => {
-    const name = feature.properties?.NOM ?? feature.properties?.nom ?? row?.DEP ?? '—'
+  return (feature: any, value: number | string | null, row?: ServiceDataRow) => {
+    const name = feature.properties?.NOM ?? feature.properties?.nom ?? feature.properties?.name ?? row?.Académie ?? row?.['Académie'] ?? row?.DEP ?? '—'
 
     if (tooltipConfig.template === 'dual-metric') {
       // Special handling for dual-metric tooltips (like couverture)
@@ -260,7 +266,13 @@ function createTooltipBuilder(
 /**
  * Formats a value according to metric configuration
  */
-function formatValue(value: number, metricConfig: any): string {
+function formatValue(value: number | string, metricConfig: any): string {
+  // For ordinal scales, value is a string - return as-is
+  if (typeof value === 'string') {
+    return value
+  }
+
+  // For numeric values
   if (metricConfig.percent) {
     return `${(value * 100).toFixed(1)} %`
   }

@@ -1,14 +1,16 @@
 import type { MapRegistry, MapServiceEntry } from '@/services/map-registry'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { loadDepartementsData } from '@/data/geodata-loader'
+import { loadAcademiesData, loadDepartementsData, loadEpciData } from '@/data/geodata-loader'
 import { ErrorHandler, ServiceInitializationError } from '@/lib/errors'
 import { mapRegistry } from '@/services/registry-setup'
 
 export const useMapStore = defineStore('map', () => {
   // State
   const currentMapId = ref<string | null>(null)
-  const geoData = ref<any>(null)
+  const departmentsGeoData = ref<any>(null)
+  const academiesGeoData = ref<any>(null)
+  const epciGeoData = ref<any>(null)
   const isLoading = ref(false)
   const error = ref<string | null>(null)
   const registry = ref<MapRegistry | null>(null)
@@ -18,6 +20,21 @@ export const useMapStore = defineStore('map', () => {
     if (!registry.value || !currentMapId.value)
       return null
     return registry.value.get(currentMapId.value) || null
+  })
+
+  const geoData = computed(() => {
+    const serviceConfig = currentMapEntry.value?.service.serviceConfig
+    const geoDataType = serviceConfig?.geoDataType || 'departments'
+
+    if (geoDataType === 'academies') {
+      return academiesGeoData.value
+    }
+    else if (geoDataType === 'epci') {
+      return epciGeoData.value
+    }
+    else {
+      return departmentsGeoData.value
+    }
   })
 
   const currentService = computed(() => {
@@ -66,9 +83,25 @@ export const useMapStore = defineStore('map', () => {
         throw new ServiceInitializationError(mapId, undefined, { available: registry.value.getIds() })
       }
 
-      // Load geo data if not already loaded
-      if (!geoData.value) {
-        geoData.value = await loadDepartementsData()
+      // Determine which geodata to load based on service configuration
+      const serviceConfig = mapEntry.service.serviceConfig
+      const geoDataType = serviceConfig?.geoDataType || 'departments'
+
+      // Load appropriate geo data if not already loaded
+      if (geoDataType === 'academies') {
+        if (!academiesGeoData.value) {
+          academiesGeoData.value = await loadAcademiesData()
+        }
+      }
+      else if (geoDataType === 'epci') {
+        if (!epciGeoData.value) {
+          epciGeoData.value = await loadEpciData()
+        }
+      }
+      else {
+        if (!departmentsGeoData.value) {
+          departmentsGeoData.value = await loadDepartementsData()
+        }
       }
 
       // Load map service data

@@ -14,8 +14,9 @@ export interface TitleTemplate {
 export interface MetricColorScheme {
   scheme: string
   label: string
-  type?: 'quantize' | 'quantile' | 'threshold' | 'diverging'
-  domain?: number[]
+  type?: 'quantize' | 'quantile' | 'threshold' | 'diverging' | 'ordinal'
+  domain?: number[] | string[]
+  range?: string[] // Explicit colors for ordinal scales
   percent?: boolean
   legend?: boolean
   clamp?: boolean
@@ -57,11 +58,14 @@ export interface ServiceRenderConfig {
   /** Tooltip configuration */
   tooltip: TooltipConfig
 
+  /** Custom row key processing - extracts normalized key from data row */
+  rowKeyProcessor?: (row: ServiceDataRow, rowKey: string) => string
+
   /** Custom value processing */
   valueProcessor?: (row: ServiceDataRow, metric: string) => any
 
-  /** Custom number normalization */
-  numberNormalizer?: (value: any) => number | null
+  /** Custom number normalization - can return string for ordinal scales */
+  numberNormalizer?: (value: any) => number | string | null
 }
 
 /**
@@ -75,6 +79,9 @@ export interface ServiceConfig {
 
   /** CSV delimiter (default: ',' for comma-delimited, ';' for semicolon-delimited) */
   delimiter?: string
+
+  /** Optional geodata type for services using non-department geography (e.g., 'academies', 'epci') */
+  geoDataType?: 'departments' | 'academies' | 'epci'
 
   /** Entry definitions for form controls */
   formControls: FormControl[]
@@ -99,6 +106,14 @@ export function defaultNumberNormalizer(v: any): number | null {
 export function defaultFeatureKey(f: any): string {
   const p = f.properties || {}
   return String(p.INSEE_DEP ?? p.insee_dep ?? p.code ?? p.DEP).toUpperCase().padStart(2, '0')
+}
+
+/**
+ * Feature key extractor for French academies
+ */
+export function academyFeatureKey(f: any): string {
+  const p = f.properties || {}
+  return String(p.code_academie ?? p.CODE_ACADEMIE ?? p.code).padStart(2, '0')
 }
 
 /**
