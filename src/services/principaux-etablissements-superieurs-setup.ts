@@ -1,7 +1,7 @@
 import type { ServiceConfig } from '@/services/service-config'
 import type { GeoData, MapRenderer, ServiceDataRow } from '@/types/service.types'
 import * as Plot from '@observablehq/plot'
-import { etablissementsSuperieursConfig } from '@/config/etablissements-superieurs'
+import { principauxEtablissementsSuperieursConfig } from '@/config/principaux-etablissements-superieurs'
 import { createFranceProjection } from '@/services/custom-projection'
 import MapService from '@/services/map-service'
 
@@ -30,9 +30,9 @@ function parseGeolocation(geoStr: string): [number, number] | null {
 
 /**
  * Creates a renderer for establishments using dot marks
- * Dot size = student count, dot color = year of creation
+ * Dot size = student count, faceted by generation
  */
-export function createEtablissementsSuperieursRenderer(
+export function createPrincipauxEtablissementsSuperieursRenderer(
   config: ServiceConfig,
 ): MapRenderer {
   return (geoData: GeoData, service: any) => {
@@ -59,15 +59,15 @@ export function createEtablissementsSuperieursRenderer(
 
     const enrichedData: EnrichedPoint[] = tabularData
       .map((row: ServiceDataRow) => {
-        const geoStr = String(row.Géolocalisation || '')
+        const geoStr = String(row.géolocalisation || '')
         const coordinates = parseGeolocation(geoStr)
 
-        // Get student count
-        const studentStr = String(row['Effectif d\'étudiants inscrits'] || '0')
+        // Get student count from last available year (2022-23)
+        const studentStr = String(row['Effectifs d\'étudiants inscrits 2022-23'] || '0')
         const studentCount = Number.parseInt(studentStr, 10) || 0
 
         // Get year from date
-        const dateValue = row['Date d\'ouverture']
+        const dateValue = row.date_creation
         const year = renderConfig.numberNormalizer?.(dateValue) ?? null
 
         // Determine generation based on year
@@ -76,8 +76,8 @@ export function createEtablissementsSuperieursRenderer(
           if (year >= 1960 && year < 1980) {
             generation = '1ère génération de campus de 1960 à 1980'
           }
-          else if (year >= 1980 && year < 2000) {
-            generation = '2e génération de campus de 1980 à 2000'
+          else if (year >= 1980 && year < 1990) {
+            generation = '2e génération de campus de 1980 à 1990'
           }
           else if (year >= 2000 && year < 2020) {
             generation = '3e génération de campus de 2000 à 2020'
@@ -89,7 +89,7 @@ export function createEtablissementsSuperieursRenderer(
           studentCount,
           year,
           generation,
-          name: String(row.Implantation || 'Établissement inconnu'),
+          name: String(row.libellé || 'Établissement inconnu'),
           commune: String(row.Commune || ''),
         }
       })
@@ -132,23 +132,18 @@ export function createEtablissementsSuperieursRenderer(
       )
     }
 
-    // Circles for establishments with hexbin clustering for geographic data
+    // Circles for establishments (individual dots)
     marks.push(
-      Plot.circle(
-        enrichedData,
-        Plot.hexbin(
-          { r: 'count' }, // radius = count of establishments in bin
-          {
-            x: (d: EnrichedPoint) => d.coordinates![0],
-            y: (d: EnrichedPoint) => d.coordinates![1],
-            fy: (d: EnrichedPoint) => d.generation,
-            fill: '#4682b4', // Solid blue color
-            stroke: '#333333',
-            strokeWidth: 0.5,
-            fillOpacity: 0.7,
-          },
-        ),
-      ),
+      Plot.dot(enrichedData, {
+        x: (d: EnrichedPoint) => d.coordinates![0],
+        y: (d: EnrichedPoint) => d.coordinates![1],
+        fy: (d: EnrichedPoint) => d.generation,
+        r: (d: EnrichedPoint) => Math.sqrt(d.studentCount),
+        fill: '#4682b4',
+        stroke: '#333333',
+        strokeWidth: 0.5,
+        fillOpacity: 0.7,
+      }),
     )
 
     // Add fy axis on the right side
@@ -161,11 +156,11 @@ export function createEtablissementsSuperieursRenderer(
       title: plotTitle,
       projection: createFranceProjection() as any, // Custom composite projection
       fy: {
-        domain: ['1ère génération de campus de 1960 à 1980', '2e génération de campus de 1980 à 2000', '3e génération de campus de 2000 à 2020'],
+        domain: ['1ère génération de campus de 1960 à 1980', '2e génération de campus de 1980 à 1990', '3e génération de campus de 2000 à 2020'],
         label: null,
       },
       r: {
-        range: [3, 20], // Min and max radius for circles based on count
+        range: [2, 15], // Min and max radius for circles based on student count
       },
       marks,
       width: 975,
@@ -183,24 +178,24 @@ export function createEtablissementsSuperieursRenderer(
 }
 
 /**
- * Create the etablissements-superieurs service with custom dot renderer
+ * Create the principaux-etablissements-superieurs service with custom dot renderer
  */
-export async function createEtablissementsSuperieursService(): Promise<{
+export async function createPrincipauxEtablissementsSuperieursService(): Promise<{
   service: MapService
   renderer: MapRenderer
 }> {
   // Create the service
   const service = new MapService({
-    title: etablissementsSuperieursConfig.title,
-    dataFile: etablissementsSuperieursConfig.dataFile,
+    title: principauxEtablissementsSuperieursConfig.title,
+    dataFile: principauxEtablissementsSuperieursConfig.dataFile,
     delimiter: ';', // CSV uses semicolon delimiter
-    formControls: etablissementsSuperieursConfig.formControls,
-    dataPreprocessor: etablissementsSuperieursConfig.dataPreprocessor,
+    formControls: principauxEtablissementsSuperieursConfig.formControls,
+    dataPreprocessor: principauxEtablissementsSuperieursConfig.dataPreprocessor,
   })
-  service.serviceConfig = etablissementsSuperieursConfig
+  service.serviceConfig = principauxEtablissementsSuperieursConfig
 
   // Create the custom renderer
-  const renderer = createEtablissementsSuperieursRenderer(etablissementsSuperieursConfig)
+  const renderer = createPrincipauxEtablissementsSuperieursRenderer(principauxEtablissementsSuperieursConfig)
 
   return { service, renderer }
 }

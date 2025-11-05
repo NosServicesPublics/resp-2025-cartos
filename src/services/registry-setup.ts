@@ -17,6 +17,7 @@ import { partLogementsSociauxConfig } from '@/config/part-logements-sociaux'
 import { partLogementsSociauxEpciConfig } from '@/config/part-logements-sociaux-epci'
 import { partResidencesConfig } from '@/config/part-residences'
 import { populationMaximaleConfig } from '@/config/population-maximale'
+import { principauxEtablissementsSuperieursConfig } from '@/config/principaux-etablissements-superieurs'
 import { segregationSocialeCollegesConfig } from '@/config/segregation-sociale-colleges'
 import { tauxReussiteBacConfig } from '@/config/taux-reussite-bac'
 import { tempsArriveeSMURConfig } from '@/config/temps-arrivee-smur'
@@ -24,6 +25,7 @@ import { variationMedecinsConfig } from '@/config/variation-medecins'
 import { variationPopulationConfig } from '@/config/variation-population'
 import { createEtablissementsSuperieursService } from '@/services/etablissements-superieurs-setup'
 import { MapRegistry } from '@/services/map-registry'
+import { createPrincipauxEtablissementsSuperieursService } from '@/services/principaux-etablissements-superieurs-setup'
 import { ServiceFactory } from '@/services/service-factory'
 import { createVariationPopulationService } from '@/services/variation-population-setup'
 
@@ -71,6 +73,10 @@ async function createMapRegistry(): Promise<MapRegistry> {
   // Register etablissements-superieurs service with custom dot renderer
   const { service: esService, renderer: esRenderer } = await createEtablissementsSuperieursService()
   registry.register(etablissementsSuperieursConfig.id, esService, esRenderer)
+
+  // Register principaux-etablissements-superieurs service with custom dot renderer
+  const { service: pesService, renderer: pesRenderer } = await createPrincipauxEtablissementsSuperieursService()
+  registry.register(principauxEtablissementsSuperieursConfig.id, pesService, pesRenderer)
 
   return registry
 }
