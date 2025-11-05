@@ -1,7 +1,6 @@
 import type { ServiceConfig } from '@/services/service-config'
 import type { GeoData, MapRenderer, ServiceDataRow } from '@/types/service.types'
 import * as Plot from '@observablehq/plot'
-import * as d3 from 'd3'
 import { etablissementsSuperieursConfig } from '@/config/etablissements-superieurs'
 import { createFranceProjection } from '@/services/custom-projection'
 import MapService from '@/services/map-service'
@@ -27,61 +26,6 @@ function parseGeolocation(geoStr: string): [number, number] | null {
 
   // Return as [longitude, latitude] for GeoJSON convention
   return [lon, lat]
-}
-
-/**
- * Aggregate establishments by department
- */
-interface DepartmentAggregate {
-  departmentCode: string
-  departmentName: string
-  studentCount: number
-  establishmentCount: number
-  avgYear: number | null
-  establishments: Array<{ name: string, year: number | null, students: number }>
-}
-
-function aggregateByDepartment(
-  points: Array<{ coordinates: [number, number], studentCount: number, year: number | null, name: string, commune: string, departmentCode: string, departmentName: string }>,
-): DepartmentAggregate[] {
-  const departmentMap = new Map<string, DepartmentAggregate>()
-
-  for (const point of points) {
-    const deptCode = point.departmentCode
-
-    if (!departmentMap.has(deptCode)) {
-      departmentMap.set(deptCode, {
-        departmentCode: deptCode,
-        departmentName: point.departmentName,
-        studentCount: 0,
-        establishmentCount: 0,
-        avgYear: null,
-        establishments: [],
-      })
-    }
-
-    const dept = departmentMap.get(deptCode)!
-    dept.studentCount += point.studentCount
-    dept.establishmentCount += 1
-    dept.establishments.push({
-      name: point.name,
-      year: point.year,
-      students: point.studentCount,
-    })
-
-    // Update average year
-    if (point.year !== null) {
-      if (dept.avgYear === null) {
-        dept.avgYear = point.year
-      }
-      else {
-        const totalYears = dept.avgYear * (dept.establishmentCount - 1) + point.year
-        dept.avgYear = Math.round(totalYears / dept.establishmentCount)
-      }
-    }
-  }
-
-  return Array.from(departmentMap.values())
 }
 
 /**
@@ -113,8 +57,6 @@ export function createEtablissementsSuperieursRenderer(
       year: number | null
       name: string
       commune: string
-      departmentCode: string
-      departmentName: string
     }
 
     const enrichedData: EnrichedPoint[] = tabularData
@@ -136,81 +78,9 @@ export function createEtablissementsSuperieursRenderer(
           year,
           name: String(row.Implantation || 'Établissement inconnu'),
           commune: String(row.Commune || ''),
-          departmentCode: String(row['Code département'] || ''),
-          departmentName: String(row.Département || ''),
         }
       })
-      .filter((row: EnrichedPoint) => row.coordinates !== undefined && row.studentCount > 0 && row.departmentCode !== '')
-
-    // Aggregate by department
-    const departmentData = aggregateByDepartment(
-      enrichedData.map(d => ({
-        coordinates: d.coordinates!,
-        studentCount: d.studentCount,
-        year: d.year,
-        name: d.name,
-        commune: d.commune,
-        departmentCode: d.departmentCode,
-        departmentName: d.departmentName,
-      })),
-    )
-
-    // Calculate department centroids from GeoJSON
-    interface DepartmentPoint {
-      lon: number
-      lat: number
-      departmentCode: string
-      departmentName: string
-      studentCount: number
-      establishmentCount: number
-      avgYear: number | null
-      establishments: Array<{ name: string, year: number | null, students: number }>
-    }
-
-    const departmentPoints: DepartmentPoint[] = []
-
-    console.log('Department data count:', departmentData.length)
-    console.log('Sample department codes:', departmentData.slice(0, 5).map(d => d.departmentCode))
-    console.log('GeoJSON feature codes:', geoData.featureCollection.features.slice(0, 5).map(f => f.properties?.INSEE_DEP || f.properties?.code))
-
-    for (const dept of departmentData) {
-      // Remove the "D" prefix from department codes in the CSV
-      const cleanCode = dept.departmentCode.replace(/^D/, '')
-      // Remove leading zeros to normalize (080 -> 80, 004 -> 4)
-      const normalizedCode = cleanCode.replace(/^0+/, '') || '0'
-
-      // Find the corresponding GeoJSON feature - try multiple matching strategies
-      const feature = geoData.featureCollection.features.find((f) => {
-        const geoCode = String(f.properties?.INSEE_DEP || f.properties?.code || '')
-        const normalizedGeoCode = geoCode.replace(/^0+/, '') || '0'
-
-        // Try normalized match (without leading zeros) and exact match
-        return normalizedGeoCode === normalizedCode
-          || geoCode === cleanCode
-          || geoCode === normalizedCode
-      })
-
-      if (feature) {
-        // Calculate centroid using d3
-        const centroid = d3.geoCentroid(feature)
-
-        departmentPoints.push({
-          lon: centroid[0],
-          lat: centroid[1],
-          departmentCode: dept.departmentCode,
-          departmentName: dept.departmentName,
-          studentCount: dept.studentCount,
-          establishmentCount: dept.establishmentCount,
-          avgYear: dept.avgYear,
-          establishments: dept.establishments,
-        })
-      }
-      else {
-        console.log('No feature found for department:', dept.departmentCode, cleanCode, normalizedCode, dept.departmentName)
-      }
-    }
-
-    console.log('Department points with coordinates:', departmentPoints.length)
+      .filter((row: EnrichedPoint) => row.coordinates !== undefined && row.studentCount > 0)
 
     // Create color scale config
     const colorScale: any = {
@@ -259,36 +129,17 @@ export function createEtablissementsSuperieursRenderer(
       )
     }
 
-    // Log department points data
-    console.log('Rendering department points:', departmentPoints.length)
-    if (departmentPoints.length > 0) {
-      console.log('Sample point:', departmentPoints[0])
-      console.log('Student counts:', departmentPoints.map(d => d.studentCount).slice(0, 10))
-    }
-
-    // Dots for departments
+    // Dots for establishments - use sqrt scale for area
     marks.push(
-      Plot.dot(departmentPoints, {
-        x: d => d.lon,
-        y: d => d.lat,
-        r: d => Math.max(3, Math.sqrt(d.studentCount / Math.PI) * 0.5), // Minimum radius of 3px
-        fill: d => d.avgYear,
+      Plot.dot(enrichedData, {
+        x: d => d.coordinates![0],
+        y: d => d.coordinates![1],
+        r: d => Math.sqrt(d.studentCount / Math.PI) * 0.3, // Scale down for visibility
+        fill: d => d.year,
         stroke: '#333333',
-        strokeWidth: 1,
-        fillOpacity: 0.8,
-        title: (d: DepartmentPoint) => {
-          const header = `${d.departmentName} (${d.departmentCode})`
-          const countInfo = `\n${d.establishmentCount} établissement${d.establishmentCount > 1 ? 's' : ''}`
-          const yearInfo = d.avgYear ? `\nAnnée moyenne: ${d.avgYear}` : ''
-          const studentInfo = `\nÉtudiants: ${d.studentCount.toLocaleString('fr-FR')}`
-          const topEstablishments = d.establishments
-            .sort((a: { students: number }, b: { students: number }) => b.students - a.students)
-            .slice(0, 5)
-          const namesList = topEstablishments.length > 0
-            ? `\n\nPrincipaux établissements:\n${topEstablishments.map((e: { name: string, students: number }) => `${e.name} (${e.students.toLocaleString('fr-FR')} étudiants)`).join('\n')}${d.establishments.length > 5 ? `\n... et ${d.establishments.length - 5} autres` : ''}`
-            : ''
-          return `${header}${countInfo}${yearInfo}${studentInfo}${namesList}`
-        },
+        strokeWidth: 0.5,
+        fillOpacity: 0.7,
+        title: d => `${d.name}\n${d.commune}\nAnnée: ${d.year || 'Inconnue'}\nÉtudiants: ${d.studentCount.toLocaleString('fr-FR')}`,
       }),
     )
 
