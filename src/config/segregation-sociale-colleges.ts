@@ -4,6 +4,7 @@ import { SEQUENTIAL_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const segregationSocialeCollegesConfig: ServiceConfig = {
   id: 'segregation-sociale-colleges',
   title: 'Ségrégation sociale entre collèges',
+  thematicCategory: 'enseignement-superieur-recherche',
   dataFile: `${import.meta.env.BASE_URL}data/fr-en-indicateur_segregation_sociale_colleges.csv`,
   delimiter: ';',
   formControls: [

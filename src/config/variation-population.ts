@@ -4,6 +4,7 @@ import { DIVERGING_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const variationPopulationConfig: ServiceConfig = {
   id: 'variation-population',
   title: 'Variation de la population',
+  thematicCategory: 'guichets',
   dataFile: `${import.meta.env.BASE_URL}data/variation-population.csv`,
   formControls: [
     {

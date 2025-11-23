@@ -4,6 +4,7 @@ import { DIVERGING_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const evolutionLogementsSociauxConfig: ServiceConfig = {
   id: 'evolution-logements-sociaux',
   title: 'Évolution des logements sociaux',
+  thematicCategory: 'logement',
   dataFile: `${import.meta.env.BASE_URL}data/rpls_evol .csv`,
   geoDataType: 'epci',
   formControls: [

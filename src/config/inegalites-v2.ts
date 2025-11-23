@@ -4,6 +4,7 @@ import { COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const inegalitesV2Config: ServiceConfig = {
   id: 'inegalites-v2',
   title: 'Inégalités d\'accès (v2)',
+  thematicCategory: 'guichets',
   dataFile: `${import.meta.env.BASE_URL}data/inegalites_v2.csv`,
 
   // Preprocessor to expand aggregate DOM code "97" to individual DOM territories

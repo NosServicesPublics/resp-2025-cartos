@@ -4,6 +4,7 @@ import { SEQUENTIAL_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const boursiersAcademieConfig: ServiceConfig = {
   id: 'boursiers-academie',
   title: 'Proportion de boursiers sur critères sociaux par académie en 2023-2024',
+  thematicCategory: 'enseignement-superieur-recherche',
   dataFile: `${import.meta.env.BASE_URL}data/boursiers-academie.csv`,
   geoDataType: 'academies',
 

@@ -4,6 +4,7 @@ import { DIVERGING_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const evolutionConfig: ServiceConfig = {
   id: 'evolution',
   title: 'Évolution du maillage',
+  thematicCategory: 'guichets',
   dataFile: `${import.meta.env.BASE_URL}data/evolution.csv`,
   formControls: [
     {

@@ -6,7 +6,7 @@ import AppFooter from '@/components/AppFooter.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import MainLayout from '@/components/MainLayout.vue'
 import MapControls from '@/components/MapControls.vue'
-import MapPickerTabs from '@/components/MapPickerTabs.vue'
+import MapNavigationPicker from '@/components/MapNavigationPicker.vue'
 import MapRenderer from '@/components/MapRenderer.vue'
 import { useMapStore } from '@/stores/map'
 
@@ -48,7 +48,7 @@ watch([
       <main class="md:min-h-[calc(100vh-4rem)] container mx-auto py-12 flex flex-col">
         <MainLayout class="flex-1">
           <template #top>
-            <MapPickerTabs />
+            <MapNavigationPicker />
           </template>
           <template #main>
             <Transition

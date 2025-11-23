@@ -4,6 +4,7 @@ import { SEQUENTIAL_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const evolutionPart65AnsConfig: ServiceConfig = {
   id: 'evolution-part-65ans',
   title: 'Évolution de la part des 65 ans ou plus',
+  thematicCategory: 'guichets',
   dataFile: `${import.meta.env.BASE_URL}data/evolution-part-65ans.csv`,
   formControls: [
     {

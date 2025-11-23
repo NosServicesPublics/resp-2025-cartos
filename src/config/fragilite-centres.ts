@@ -4,6 +4,7 @@ import { SEQUENTIAL_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const fragiliteCentresConfig: ServiceConfig = {
   id: 'fragilite-centres',
   title: 'Fragilité des centres',
+  thematicCategory: 'guichets',
   dataFile: `${import.meta.env.BASE_URL}data/fragilite-centres.csv`,
   formControls: [
     {

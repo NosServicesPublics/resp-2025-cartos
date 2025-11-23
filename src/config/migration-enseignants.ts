@@ -4,6 +4,7 @@ import { DIVERGING_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const migrationEnseignantsConfig: ServiceConfig = {
   id: 'migration-enseignants',
   title: 'Migration nette des enseignants',
+  thematicCategory: 'enseignement-superieur-recherche',
   dataFile: `${import.meta.env.BASE_URL}data/migration-enseignants.csv`,
   geoDataType: 'academies',
   formControls: [

@@ -4,6 +4,7 @@ import { COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const dureeConfig: ServiceConfig = {
   id: 'duree',
   title: 'Durées d\'accès',
+  thematicCategory: 'guichets',
   dataFile: `${import.meta.env.BASE_URL}data/duree.csv`,
 
   // Preprocessor to expand aggregate DOM code "97" to individual DOM territories

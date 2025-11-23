@@ -8,6 +8,38 @@ import type { Feature, FeatureCollection, Geometry } from 'geojson'
 import type { Ref } from 'vue'
 
 /**
+ * Thematic categories for public subsidy navigation
+ */
+export type ThematicCategory = 'logement' | 'enseignement-superieur-recherche' | 'eau' | 'guichets' | 'sante'
+
+/**
+ * Navigation mode for map selection
+ */
+export type NavigationMode = 'thematic' | 'dataset'
+
+/**
+ * Color mappings for thematic categories (DaisyUI color names)
+ */
+export const THEMATIC_COLORS: Record<ThematicCategory, string> = {
+  'logement': 'bouteille',
+  'enseignement-superieur-recherche': 'ambre',
+  'eau': 'outremer',
+  'guichets': 'amethyste',
+  'sante': 'canard',
+}
+
+/**
+ * Display labels for thematic categories
+ */
+export const THEMATIC_LABELS: Record<ThematicCategory, string> = {
+  'logement': 'Logement',
+  'enseignement-superieur-recherche': 'Enseignement supérieur et recherche',
+  'eau': 'Eau',
+  'guichets': 'Guichets',
+  'sante': 'Santé',
+}
+
+/**
  * Entry option for select inputs (facilities, metrics, etc.)
  */
 export interface InputEntry {

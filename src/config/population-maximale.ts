@@ -128,6 +128,7 @@ const DEPT_NAME_TO_CODE: Record<string, string> = {
 export const populationMaximaleConfig: ServiceConfig = {
   id: 'population-maximale',
   title: 'Année de la population maximale selon le scénario central',
+  thematicCategory: 'guichets',
   dataFile: `${import.meta.env.BASE_URL}data/population-maximale-central.csv`,
   formControls: [
     // No color scheme selector for ordinal maps - colors are fixed by category

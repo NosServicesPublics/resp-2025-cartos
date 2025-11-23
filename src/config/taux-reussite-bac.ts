@@ -4,6 +4,7 @@ import { SEQUENTIAL_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const tauxReussiteBacConfig: ServiceConfig = {
   id: 'taux-reussite-bac',
   title: 'Taux de réussite au Bac 2019',
+  thematicCategory: 'enseignement-superieur-recherche',
   dataFile: `${import.meta.env.BASE_URL}data/taux-reussite-bac-2019.csv`,
   geoDataType: 'academies',
 

@@ -4,6 +4,7 @@ import { COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const eloignementConfig: ServiceConfig = {
   id: 'eloignement',
   title: 'Éloignements',
+  thematicCategory: 'guichets',
   dataFile: `${import.meta.env.BASE_URL}data/eloignement.csv`,
 
   // Preprocessor to expand aggregate DOM code "97" to individual DOM territories

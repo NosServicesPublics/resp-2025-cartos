@@ -4,6 +4,7 @@ import { DIVERGING_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const variationMedecinsConfig: ServiceConfig = {
   id: 'variation-medecins',
   title: 'Variation de la densité de médecins',
+  thematicCategory: 'sante',
   dataFile: `${import.meta.env.BASE_URL}data/variation_population_medecins.csv`,
   formControls: [
     {

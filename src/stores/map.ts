@@ -1,4 +1,5 @@
 import type { MapRegistry, MapServiceEntry } from '@/services/map-registry'
+import type { NavigationMode, ThematicCategory } from '@/types/service.types'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { loadAcademiesData, loadDepartementsData, loadEpciData } from '@/data/geodata-loader'
@@ -8,6 +9,7 @@ import { mapRegistry } from '@/services/registry-setup'
 export const useMapStore = defineStore('map', () => {
   // State
   const currentMapId = ref<string | null>(null)
+  const navigationMode = ref<NavigationMode>('thematic')
   const departmentsGeoData = ref<any>(null)
   const academiesGeoData = ref<any>(null)
   const epciGeoData = ref<any>(null)
@@ -60,8 +62,52 @@ export const useMapStore = defineStore('map', () => {
       .map(entry => ({
         id: entry.id,
         title: entry.service.title,
+        thematicCategory: entry.service.serviceConfig?.thematicCategory,
       }))
   })
+
+  const availableCategories = computed<ThematicCategory[]>(() => {
+    if (!registry.value)
+      return []
+    const categories = new Set<ThematicCategory>()
+    registry.value.getAll().forEach((entry) => {
+      const category = entry.service.serviceConfig?.thematicCategory
+      if (category) {
+        categories.add(category)
+      }
+    })
+    return Array.from(categories).sort()
+  })
+
+  function getMapsByCategory(category: ThematicCategory) {
+    if (!registry.value)
+      return []
+    return registry.value
+      .getAll()
+      .filter(entry => entry.service.serviceConfig?.thematicCategory === category)
+      .map(entry => ({
+        id: entry.id,
+        title: entry.service.title,
+      }))
+  }
+
+  function getDatasetMaps() {
+    if (!registry.value)
+      return []
+    // Dataset mode: only show maps that work across multiple themes (facility-based)
+    const datasetMapIds = ['couverture', 'duree', 'eloignement']
+    return registry.value
+      .getAll()
+      .filter(entry => datasetMapIds.includes(entry.id))
+      .map(entry => ({
+        id: entry.id,
+        title: entry.service.title,
+      }))
+  }
+
+  function setNavigationMode(mode: NavigationMode) {
+    navigationMode.value = mode
+  }
 
   // Actions
   const setCurrentMap = async (mapId: string) => {
@@ -198,6 +244,7 @@ export const useMapStore = defineStore('map', () => {
     geoData,
     // State
     currentMapId,
+    navigationMode,
     isLoading,
     error,
 
@@ -206,8 +253,12 @@ export const useMapStore = defineStore('map', () => {
     currentRenderer,
     formControls,
     availableMaps,
+    availableCategories,
+    getMapsByCategory,
+    getDatasetMaps,
 
     // Actions
+    setNavigationMode,
     setCurrentMap,
     setSelectedEntry,
     getSelectedEntry,

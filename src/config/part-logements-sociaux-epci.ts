@@ -4,6 +4,7 @@ import { SEQUENTIAL_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const partLogementsSociauxEpciConfig: ServiceConfig = {
   id: 'part-logements-sociaux-epci',
   title: 'Logements sociaux (EPCI)',
+  thematicCategory: 'logement',
   dataFile: `${import.meta.env.BASE_URL}data/logement-social-epcii.csv`,
   geoDataType: 'epci',
   formControls: [

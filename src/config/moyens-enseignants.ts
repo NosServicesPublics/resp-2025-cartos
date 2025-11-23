@@ -4,6 +4,7 @@ import { SEQUENTIAL_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const moyensEnseignantsConfig: ServiceConfig = {
   id: 'moyens-enseignants',
   title: 'Moyens d\'encadrement dans les collèges (2024)',
+  thematicCategory: 'enseignement-superieur-recherche',
   dataFile: `${import.meta.env.BASE_URL}data/moyens-enseignants-by-academy.csv`,
   geoDataType: 'academies',
 

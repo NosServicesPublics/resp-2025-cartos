@@ -4,6 +4,7 @@ import { SEQUENTIAL_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const partResidencesConfig: ServiceConfig = {
   id: 'part-residences',
   title: 'Part des propriétaires',
+  thematicCategory: 'logement',
   dataFile: `${import.meta.env.BASE_URL}data/part-residences.csv`,
   formControls: [
     {

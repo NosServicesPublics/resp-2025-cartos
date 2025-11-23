@@ -4,6 +4,7 @@ import { COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const tempsArriveeSMURConfig: ServiceConfig = {
   id: 'temps-arrivee-smur',
   title: 'Temps d\'arrivée des SMUR',
+  thematicCategory: 'sante',
   dataFile: `${import.meta.env.BASE_URL}data/temps-arrivee-smur.csv`,
 
   // Preprocessor to handle the "Numéro de département" column and rename it to "dep"

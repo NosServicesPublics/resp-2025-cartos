@@ -111,12 +111,9 @@ export default class MapService {
 
   /**
    * Get form controls with dynamic filtering based on current selections
-   * Filters color scheme options when metric uses diverging scale
+   * Filters out colorScheme control as colors are now determined by thematic category
    */
   getFilteredFormControls(): FormControl[] {
-    // Simply return the form controls as configured
-    // The color scheme options are already set correctly in each service config
-    // (DIVERGING_COLOR_SCHEME_OPTIONS for diverging metrics, COLOR_SCHEME_OPTIONS for sequential)
-    return this.formControls
+    return this.formControls.filter(control => control.key !== 'colorScheme')
   }
 }

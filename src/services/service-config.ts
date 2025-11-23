@@ -1,4 +1,4 @@
-import type { FormControl, ServiceDataRow } from '@/types/service.types'
+import type { FormControl, ServiceDataRow, ThematicCategory } from '@/types/service.types'
 
 /**
  * Template string interpolation for dynamic titles
@@ -76,6 +76,9 @@ export interface ServiceConfig {
   id: string
   title: string
   dataFile: string
+
+  /** Thematic category for navigation and grouping */
+  thematicCategory?: ThematicCategory
 
   /** CSV delimiter (default: ',' for comma-delimited, ';' for semicolon-delimited) */
   delimiter?: string

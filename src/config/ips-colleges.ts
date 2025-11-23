@@ -4,6 +4,7 @@ import { DIVERGING_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const ipsCollegesConfig: ServiceConfig = {
   id: 'ips-colleges',
   title: 'IPS moyen des collèges par académie (2021-2022)',
+  thematicCategory: 'enseignement-superieur-recherche',
   dataFile: `${import.meta.env.BASE_URL}data/ips-colleges-by-academy.csv`,
   geoDataType: 'academies',
 

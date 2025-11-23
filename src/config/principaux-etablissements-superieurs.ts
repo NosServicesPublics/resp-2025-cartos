@@ -4,6 +4,7 @@ import { SEQUENTIAL_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const principauxEtablissementsSuperieursConfig: ServiceConfig = {
   id: 'principaux-etablissements-superieurs',
   title: 'Principaux établissements d\'enseignement supérieur',
+  thematicCategory: 'enseignement-superieur-recherche',
   dataFile: `${import.meta.env.BASE_URL}data/fr-esr-principaux-etablissements-enseignement-superieur.csv`,
   // dataPreprocessor: (rows) => {
   //   return rows.filter((row) => {

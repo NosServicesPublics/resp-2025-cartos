@@ -4,6 +4,7 @@ import { SEQUENTIAL_COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const collegesPrivesConfig: ServiceConfig = {
   id: 'colleges-prives',
   title: 'Part des collèges privés sous contrat',
+  thematicCategory: 'enseignement-superieur-recherche',
   dataFile: `${import.meta.env.BASE_URL}data/colleges-prives.csv`,
   formControls: [
     {

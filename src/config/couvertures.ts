@@ -4,6 +4,7 @@ import { COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const couvertureConfig: ServiceConfig = {
   id: 'couverture',
   title: 'Couverture',
+  thematicCategory: 'guichets',
   dataFile: `${import.meta.env.BASE_URL}data/couverture.csv`,
   formControls: [
     {

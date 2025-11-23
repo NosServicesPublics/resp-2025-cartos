@@ -4,6 +4,7 @@ import { COLOR_SCHEME_OPTIONS } from '@/config/color-schemes'
 export const inegalitesConfig: ServiceConfig = {
   id: 'inegalites',
   title: 'Inégalités',
+  thematicCategory: 'guichets',
   dataFile: `${import.meta.env.BASE_URL}data/inegalites-merged.csv`,
   formControls: [
     {
