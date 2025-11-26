@@ -5,9 +5,10 @@ import ActionButtons from '@/components/ActionButtons.vue'
 import AppFooter from '@/components/AppFooter.vue'
 import AppHeader from '@/components/AppHeader.vue'
 import MainLayout from '@/components/MainLayout.vue'
-import MapControls from '@/components/MapControls.vue'
-import MapNavigationPicker from '@/components/MapNavigationPicker.vue'
+import MapControlsContainer from '@/components/MapControlsContainer.vue'
 import MapRenderer from '@/components/MapRenderer.vue'
+import SimpleDureeControls from '@/components/SimpleDureeControls.vue'
+import { useBreakpoints } from '@/composables/useBreakpoints'
 import { useMapStore } from '@/stores/map'
 
 const mapStore = useMapStore()
@@ -22,10 +23,11 @@ onMounted(async () => {
     await mapStore.initializeFromUrlParams(urlParams)
   }
   else {
-    // Initialize with default state
-    await mapStore.initialize()
+    // Initialize with duree dataset by default
+    await mapStore.initialize('duree')
   }
 })
+const { isMobile } = useBreakpoints()
 
 const mapPlot = ref<any>(null)
 
@@ -47,8 +49,10 @@ watch([
       <AppHeader />
       <main class="md:min-h-[calc(100vh-4rem)] container mx-auto py-12 flex flex-col">
         <MainLayout class="flex-1">
-          <template #top>
-            <MapNavigationPicker />
+          <template #right-top>
+            <MapControlsContainer>
+              <SimpleDureeControls />
+            </MapControlsContainer>
           </template>
           <template #main>
             <Transition
@@ -61,9 +65,6 @@ watch([
                 :map-plot="mapPlot"
               />
             </Transition>
-          </template>
-          <template #right-top>
-            <MapControls />
           </template>
           <template #right-bottom>
             <ActionButtons />

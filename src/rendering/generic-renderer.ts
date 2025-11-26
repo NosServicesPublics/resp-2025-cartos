@@ -46,14 +46,18 @@ export function createServiceRenderer(config: ServiceConfig): MapRenderer {
 
     // Get current selections
     const facilityLabel = service.getSelectedEntryLabel('facility') || '-'
+    const facilityKey = service.getSelectedEntry('facility')
 
     // Support simple choropleths without metric control
     // If no metric control exists, use 'default' as the metric key
     const metricKey = service.getSelectedEntry('metric') || 'default'
-    const metricConfig = renderConfig.colorSchemes[metricKey]
+
+    // Use facility key for color scheme lookup if available, otherwise fall back to metric key
+    const colorSchemeKey = facilityKey || metricKey
+    const metricConfig = renderConfig.colorSchemes[colorSchemeKey]
 
     if (!metricConfig) {
-      throw new Error(`No color scheme configured for metric: ${metricKey}`)
+      throw new Error(`No color scheme configured for: ${colorSchemeKey}`)
     }
 
     const selectedSchemeKey = service.getSelectedEntry('colorScheme')
@@ -131,8 +135,7 @@ export function createServiceRenderer(config: ServiceConfig): MapRenderer {
     else {
       outlineStrokeValue = palette?.[palette.length - 1] ?? '#222'
     } // Generate title
-    const facilityKey = service.getSelectedEntry('facility') || ''
-    const titleTemplate = getTitleTemplate(renderConfig.titleTemplates, metricKey, facilityKey)
+    const titleTemplate = getTitleTemplate(renderConfig.titleTemplates, metricKey, facilityKey || '')
     if (!titleTemplate) {
       throw new Error(`No title template configured for metric: ${metricKey}`)
     }
@@ -181,7 +184,8 @@ export function createServiceRenderer(config: ServiceConfig): MapRenderer {
       type: isDivergingScheme ? 'threshold' : (metricConfig.type === 'diverging' ? 'threshold' : (metricConfig.type || 'quantize')),
       ...(customRange ? { range: customRange } : { scheme: resolvedScheme }),
       percent: metricConfig.percent,
-      label: metricConfig.label,
+      // Use metricLabels if available, otherwise fall back to metricConfig.label
+      label: renderConfig.metricLabels?.[metricKey] ?? metricConfig.label ?? '',
       ...(metricConfig.clamp !== undefined ? { clamp: metricConfig.clamp } : {}),
       ...(metricConfig.divergingColors !== undefined ? { divergingColors: metricConfig.divergingColors } : {}),
       ...(metricConfig.asymmetric !== undefined ? { asymmetric: metricConfig.asymmetric } : {}),
@@ -198,9 +202,11 @@ export function createServiceRenderer(config: ServiceConfig): MapRenderer {
       renderConfig.tooltip,
       facilityLabel,
       metricKey,
+      colorScale.label, // Pass the resolved label
       metricConfig,
       numberNormalizer,
       renderConfig.colorSchemes,
+      renderConfig.metricLabels,
     )
 
     return renderChoropleth({
@@ -229,9 +235,11 @@ function createTooltipBuilder(
   tooltipConfig: ServiceRenderConfig['tooltip'],
   facilityLabel: string,
   currentMetric: string,
+  currentMetricLabel: string,
   currentMetricConfig: any,
   numberNormalizer: (value: any) => number | string | null,
   allMetricConfigs: Record<string, any>,
+  metricLabels?: Record<string, string>,
 ) {
   return (feature: any, value: number | string | null, row?: ServiceDataRow) => {
     const name = feature.properties?.NOM ?? feature.properties?.nom ?? feature.properties?.name ?? row?.Académie ?? row?.['Académie'] ?? row?.DEP ?? '—'
@@ -246,20 +254,21 @@ function createTooltipBuilder(
 
         if (otherMetric && allMetricConfigs[otherMetric]) {
           const otherConfig = allMetricConfigs[otherMetric]
+          const otherLabel = metricLabels?.[otherMetric] ?? otherConfig.label ?? ''
           const vOther = row[otherMetric] != null
             ? formatValue(numberNormalizer(row[otherMetric]) ?? 0, otherConfig)
             : '—'
 
-          return `${name}\n${facilityLabel}\n${currentMetricConfig.label}: ${vMain}\n${otherConfig.label}: ${vOther}`
+          return `${name}\n${facilityLabel}\n${currentMetricLabel}: ${vMain}\n${otherLabel}: ${vOther}`
         }
       }
 
-      return `${name}\n${facilityLabel}\n${currentMetricConfig.label}: ${vMain}`
+      return `${name}\n${facilityLabel}\n${currentMetricLabel}: ${vMain}`
     }
 
     // Default single-metric tooltip
     const formattedValue = value == null ? '—' : formatValue(value, currentMetricConfig)
-    return `${name}\n${currentMetricConfig.label}: ${formattedValue}`
+    return `${name}\n${currentMetricLabel}: ${formattedValue}`
   }
 }
 
@@ -278,7 +287,8 @@ function formatValue(value: number | string, metricConfig: any): string {
   }
 
   // Check if it looks like duration in minutes
-  if (metricConfig.label.toLowerCase().includes('min') || metricConfig.label.toLowerCase().includes('durée')) {
+  const label = metricConfig.label || ''
+  if (label.toLowerCase().includes('min') || label.toLowerCase().includes('durée')) {
     return `${value.toFixed(1)} min`
   }
 

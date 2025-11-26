@@ -56,11 +56,14 @@ export default class MapService {
 
     // If metric changed, validate that the current color scheme is compatible with the new metric type
     if (entryKey === 'metric' && this.serviceConfig) {
-      const metricConfig = this.serviceConfig.rendering.colorSchemes[selectedKey]
+      // For configs where colorSchemes are keyed by facility, use the facility key instead
+      const facilityKey = this.getSelectedEntry('facility')
+      const schemeKey = facilityKey || selectedKey
+      const metricConfig = this.serviceConfig.rendering.colorSchemes[schemeKey]
       const currentColorScheme = this.getSelectedEntry('colorScheme')
 
-      if (currentColorScheme && currentColorScheme !== 'auto') {
-        const isDivergingMetric = metricConfig?.type === 'diverging'
+      if (currentColorScheme && currentColorScheme !== 'auto' && metricConfig) {
+        const isDivergingMetric = metricConfig.type === 'diverging'
         const isDivergingScheme = currentColorScheme.includes('-')
 
         // Reset to 'auto' if scheme type doesn't match metric type
@@ -70,7 +73,14 @@ export default class MapService {
       }
     }
 
-    this.version.value++
+    // Safety check: ensure version is still a ref
+    if (typeof this.version === 'object' && this.version !== null && 'value' in this.version) {
+      this.version.value++
+    }
+    else {
+      // Re-initialize if corrupted
+      this.version = ref(0)
+    }
   }
 
   getSelectedEntryLabel(entryKey: string): string | undefined {
@@ -101,9 +111,9 @@ export default class MapService {
       if (d.facility !== undefined) {
         return d.facility === selectedFacility
       }
-      // For inegalites-v2 data: filter by "typeeq_id" column
-      if (d.typeeq_id !== undefined) {
-        return d.typeeq_id === selectedFacility
+      // For inegalites-v2 data: filter by "Libelle_TYPEQU" column
+      if (d.Libelle_TYPEQU !== undefined) {
+        return d.Libelle_TYPEQU === selectedFacility
       }
       return true
     })

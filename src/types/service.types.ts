@@ -45,6 +45,7 @@ export const THEMATIC_LABELS: Record<ThematicCategory, string> = {
 export interface InputEntry {
   label: string
   key: string
+  thematic?: ThematicCategory
 }
 
 /**

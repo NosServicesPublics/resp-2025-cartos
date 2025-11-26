@@ -182,15 +182,16 @@ export const useMapStore = defineStore('map', () => {
     return currentService.value.getSelectedEntry(entryKey) || ''
   }
 
-  const initialize = async () => {
+  const initialize = async (defaultMapId?: string) => {
     // Load registry first
     if (!registry.value) {
       registry.value = await mapRegistry
     }
 
-    const availableMapIds = registry.value.getIds()
-    if (availableMapIds.length > 0 && availableMapIds[0]) {
-      await setCurrentMap(availableMapIds[0])
+    // Use provided defaultMapId or fall back to first available map
+    const mapIdToLoad = defaultMapId || registry.value.getIds()[0]
+    if (mapIdToLoad) {
+      await setCurrentMap(mapIdToLoad)
     }
   }
 

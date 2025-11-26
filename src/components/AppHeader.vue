@@ -1,5 +1,5 @@
 <template>
-  <header class="md:h-16 flex items-end pt-8 md:py-0">
+  <header class="lg:h-16 flex items-end pt-8 lg:py-0">
     <div class="container mx-auto flex flex-col md:flex-row md:justify-between md:items-end gap-2">
       <h1 class="text-xl font-bold">
         Cartographies sur l'état des services publics

@@ -33,7 +33,7 @@ export const inegalitesV2Config: ServiceConfig = {
       label: 'Indicateur',
       entries: [
         { label: 'Moyenne', key: 'moyenne' },
-        { label: 'Médiane', key: 'mediane' },
+        { label: 'Durée d\'accès médiane', key: 'mediane' },
         { label: 'Décile 1 (D1)', key: 'decile1' },
         { label: 'Décile 9 (D9)', key: 'decile9' },
         { label: 'Écart interquartile (IQR)', key: 'iqr' },

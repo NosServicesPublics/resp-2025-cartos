@@ -13,7 +13,7 @@ export interface TitleTemplate {
  */
 export interface MetricColorScheme {
   scheme: string
-  label: string
+  label?: string
   type?: 'quantize' | 'quantile' | 'threshold' | 'diverging' | 'ordinal'
   domain?: number[] | string[]
   range?: string[] // Explicit colors for ordinal scales
@@ -44,6 +44,9 @@ export interface ServiceRenderConfig {
 
   /** Color schemes per metric */
   colorSchemes: Record<string, MetricColorScheme>
+
+  /** Metric-specific legend labels (optional, overrides label from colorSchemes) */
+  metricLabels?: Record<string, string>
 
   /** Data key mappings */
   dataKeys: {

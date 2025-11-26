@@ -9,7 +9,7 @@ export function useBreakpoints() {
     '2xl': 1536,
   })
 
-  const isMobile = breakpoints.smaller('md')
+  const isMobile = breakpoints.smaller('lg')
 
   return {
     isMobile,

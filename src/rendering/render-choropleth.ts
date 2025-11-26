@@ -2,6 +2,7 @@ import type { Feature, FeatureCollection, Geometry } from 'geojson'
 import type { ChoroplethConfig as BaseChoroplethConfig, OverlayMesh, ServiceDataRow } from '@/types/service.types'
 import * as Plot from '@observablehq/plot'
 import * as d3 from 'd3'
+import { CUSTOM_COLOR_SCHEMES, FULL_COLOR_SCALES } from '@/config/color-schemes'
 // import * as d3CompositeProjections from 'd3-composite-projections'
 import { createFranceProjection } from '@/services/custom-projection'
 // Extended color scale config with internal options
@@ -219,9 +220,22 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
   // ========== POST-PROCESSING ==========
   addCompositionBorders(chart, config.projection)
 
-  // Set currentColor to match the outline color (darkest from palette)
+  // Set currentColor to match the darkest color from the color scheme
   // This makes Plot's legend and title text use the scale's color
-  setCurrentColor(chart, config.outlineStroke)
+  const titleColor = (() => {
+    // If using a custom range, use the darkest color (last in array)
+    if (config.colorScale.range && Array.isArray(config.colorScale.range)) {
+      return config.colorScale.range[config.colorScale.range.length - 1]
+    }
+    // If using a named scheme, try to get the darkest color from FULL_COLOR_SCALES
+    if (config.colorScale.scheme && FULL_COLOR_SCALES[config.colorScale.scheme as keyof typeof FULL_COLOR_SCALES]) {
+      const fullScale = FULL_COLOR_SCALES[config.colorScale.scheme as keyof typeof FULL_COLOR_SCALES]
+      return fullScale[fullScale.length - 1] // Darkest color (950 shade)
+    }
+    // Fallback to outline color
+    return config.outlineStroke
+  })()
+  setCurrentColor(chart, titleColor || config.outlineStroke)
 
   return chart
 
@@ -280,6 +294,11 @@ export function renderChoropleth(options: Partial<ChoroplethConfig> = {}) {
         // Handle custom color range (applies to both quantize and threshold scales)
         if (range !== undefined) {
           finalConfig.range = range
+          delete finalConfig.scheme
+        }
+        // Replace custom scheme names with color arrays
+        else if (merged.scheme && CUSTOM_COLOR_SCHEMES[merged.scheme]) {
+          finalConfig.range = CUSTOM_COLOR_SCHEMES[merged.scheme]
           delete finalConfig.scheme
         }
 
